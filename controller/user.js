@@ -3,6 +3,7 @@ const sql = require("mssql");
 let { storecall } = require("../config/store");
 const moment = require("moment");
 var CryptoJS = require("crypto-js");
+const { falied } = require("./res");
 
 
 function md5Hash(input) {
@@ -104,77 +105,6 @@ const usercontroller = () => {
     }
   }
 
-
-
-  const createNewTask = async (req, res) => {
-    const { Task_Id, Sub_Task_Id, Emp_Id, Work_Dt, Work_Done, Entry_By, Entry_Date, Start_Time, End_Time, Status_Id } = req.body;
-
-    if (!Task_Id || !Sub_Task_Id || !Emp_Id || !Work_Dt || !Work_Done || !Entry_By || !Entry_Date || !Start_Time || !End_Time || !Status_Id) {
-      return invalidInput(res, 'Work_Id, Task_Id, Sub_Task_Id, Emp_Id, Work_Dt, Work_Done, Entry_By, Entry_Date, Start_Time, End_Time, Status_Id are Required')
-    }
-
-    try {
-      const postSaveTask = new sql.Request();
-      postSaveTask.input('Mode', 1);
-      postSaveTask.input('Work_Id', 0);
-      postSaveTask.input('Task_Id', Task_Id);
-      postSaveTask.input('Sub_Task_Id', Sub_Task_Id);
-      postSaveTask.input('Emp_Id', Emp_Id);
-      postSaveTask.input('Work_Dt', Work_Dt);
-      postSaveTask.input('Work_Done', Work_Done);
-      postSaveTask.input('Entry_By', Entry_By);
-      postSaveTask.input('Entry_Date', Entry_Date);
-      postSaveTask.input('Start_Time', Start_Time);
-      postSaveTask.input('End_Time', End_Time);
-      postSaveTask.input('Status_Id', Status_Id);
-
-      const result = await postSaveTask.execute('Work_SP');
-
-      if (result.returnValue === 0) {
-        return dataFound(res, [], 'Task saved successfully');
-      } else {
-        return noData(res, 'Failed to save task');
-      }
-
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
-  const editExistTask = async (req, res) => {
-    const { Work_Id, Task_Id, Sub_Task_Id, Emp_Id, Work_Dt, Work_Done, Entry_By, Entry_Date, Start_Time, End_Time, Status_Id } = req.body;
-
-    if (!Work_Id || !Task_Id || !Sub_Task_Id || !Emp_Id || !Work_Dt || !Work_Done || !Entry_By || !Entry_Date || !Start_Time || !End_Time || !Status_Id) {
-      return invalidInput(res, 'Work_Id, Task_Id, Sub_Task_Id, Emp_Id, Work_Dt, Work_Done, Entry_By, Entry_Date, Start_Time, End_Time, Status_Id are Required')
-    }
-
-    try {
-      const postSaveTask = new sql.Request();
-      postSaveTask.input('Mode', 2);
-      postSaveTask.input('Work_Id', Work_Id);
-      postSaveTask.input('Task_Id', Task_Id);
-      postSaveTask.input('Sub_Task_Id', Sub_Task_Id);
-      postSaveTask.input('Emp_Id', Emp_Id);
-      postSaveTask.input('Work_Dt', Work_Dt);
-      postSaveTask.input('Work_Done', Work_Done);
-      postSaveTask.input('Entry_By', Entry_By);
-      postSaveTask.input('Entry_Date', Entry_Date);
-      postSaveTask.input('Start_Time', Start_Time);
-      postSaveTask.input('End_Time', End_Time);
-      postSaveTask.input('Status_Id', Status_Id);
-
-      const result = await postSaveTask.execute('Work_SP');
-
-      if (result.rowsAffected && result.rowsAffected[0] > 0) {
-        return dataFound(res, [], 'Changes Saved!');
-      } else {
-        return noData(res, 'Failed to Update task');
-      }
-
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
 
   const authUser = async (req, res) => {
     const { AuthId } = req.query;
@@ -766,6 +696,80 @@ const usercontroller = () => {
   }
 
 
+  const postLocation = async (req, res) => {
+    const { Emp_Id, Latitude, Logitude, Web_URL } = req.body;
+
+    if (!Emp_Id || !Latitude || !Logitude || !Web_URL) {
+      return invalidInput(res, 'Emp_Id, Latitude, Logitude, Web_URL is required')
+    }
+
+    try {
+      const postQuery =`
+      INSERT INTO tbl_Tacking_Test 
+        (Emp_Id, W_Date, Latitude, Logitude, Web_URL) 
+      VALUES 
+        (@emp, @date, @latitude, @longitude, @url)`
+
+      const request = new sql.Request()
+      request.input('emp', Emp_Id)
+      request.input('date', new Date())
+      request.input('latitude', Latitude)
+      request.input('longitude', Logitude)
+      request.input('url', Web_URL)
+
+      const result = await request.query(postQuery);
+
+      if (result && result.rowsAffected && result.rowsAffected[0] > 0) {
+        dataFound(res, [], "Location Noted")
+      } else {
+        falied(res, 'Failed to Save Location')
+      }
+    } catch (e) {
+      servError(e, res)
+    }
+  }
+
+  const getLocationByEmpAndDate = async (req, res) => {
+    const { Emp_Id, W_Date } = req.query;
+
+    if (!Number(Emp_Id) || !W_Date) {
+      return invalidInput(res, 'Emp_Id, W_Date is required')
+    }
+
+    try {
+
+      const query = `
+      SELECT 
+	    	* 
+	    FROM 
+	    	tbl_Tacking_Test
+	    WHERE 
+	    	W_Date >= @start
+	    	AND 
+	    	W_Date <= @end
+	    	AND 
+	    	Emp_Id = 1`
+
+      const request = new sql.Request()
+
+      request.input('emp', Emp_Id)
+      request.input('start', new Date(W_Date).toISOString().split('T')[0] + ' 00:00:00.000')
+      request.input('end', new Date(W_Date).toISOString().split('T')[0] + ' 23:59:59.999')
+
+      const result = await request.query(query);
+
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+
+    } catch (e) {
+      servError(e, res)
+    }
+  }
+
+
 
 
   return {
@@ -790,8 +794,6 @@ const usercontroller = () => {
 
     getEmpProjects,
     getEmpTasks,
-    // createNewTask,
-    // editExistTask,
 
     authUser,
     getMenu,
@@ -799,6 +801,8 @@ const usercontroller = () => {
 
     modifyUserRights,
     modifyUserTypeRights,
+    postLocation,
+    getLocationByEmpAndDate,
   };
 };
 

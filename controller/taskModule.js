@@ -4,6 +4,23 @@ const { storecall } = require("../config/store");
 
 const taskModule = () => {
 
+  const getTaskDropDown = async (req, res) => {
+    try {
+      const getQuery = `SELECT Task_Id, Task_Name FROM tbl_Task`
+
+      const request = new sql.Request()
+      const result = await request.query(getQuery)
+
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } catch (e) {
+      servError(e, res)
+    }
+  }
+
   const getTasks = async (req, res) => {
 
     try {
@@ -384,6 +401,7 @@ const taskModule = () => {
 
 
   return {
+    getTaskDropDown,
     getTasks,
     createTask,
     editTask,

@@ -11,7 +11,8 @@ const userTypeMaster = require('../controller/userType');
 const baseGroupMaster = require('../controller/baseGroup');
 const taskModule = require('../controller/taskModule');
 const workController = require('../controller/workEntry');
-const ChatController = require('../controller/chatManagement')
+const ChatController = require('../controller/chatManagement');
+const Project_Scheduler = require('../controller/project_schedule')
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -32,6 +33,8 @@ router.post('/projectreviewandfilteremployeebased', usercontroller.projectreview
 
 
 // Raj code 
+router.post('/location', usercontroller.postLocation);
+router.get('/location', usercontroller.getLocationByEmpAndDate)
 router.post('/login', usercontroller.login)
 
 router.get('/projectInvloved', usercontroller.projectInvolved);
@@ -42,6 +45,7 @@ router.post('/tasks', taskModule.createTask);
 router.put('/tasks', taskModule.editTask);
 router.delete('/tasks', taskModule.deleteTask);
 router.get('/myTasks', taskModule.getMyTasks);
+router.get('/tasksDropdown', taskModule.getTaskDropDown)
 
 router.get('/startTask', workController.getTaskStartTime);
 router.post('/startTask', workController.postStartTime);
@@ -83,6 +87,7 @@ router.get('/projectAbstract', projectController.getProjectAbstract);
 router.get('/projectActivity', projectController.getTasksInProject);
 
 router.get('/taskTypeDropDown', taskTypeControlelr.taskTypeDropDown)
+router.get('/taskTypeGet', taskTypeControlelr.newTaskTypeDropDown)
 router.get('/taskType', taskTypeControlelr.getTaskTyepe)
 router.post('/taskType', taskTypeControlelr.postTaskType);
 router.put('/taskType', taskTypeControlelr.editTaskType);
@@ -124,6 +129,12 @@ router.post('/messages', ChatController.postMessages);
 router.get('/files', ChatController.documentsListForTopic)
 router.post('/files', ChatController.uploadFile);
 router.get('/files/download', ChatController.downloadDocument);
+
+router.get('/project/schedule/scheduleType', Project_Scheduler.getScheduleType);
+router.get('/project/schedule', Project_Scheduler.getSchedule);
+router.post('/project/schedule', Project_Scheduler.createSchedule);
+
+router.post('/project/schedule/scheduleTask', Project_Scheduler.assignTaskInSchedule)
 
 
 module.exports = router;

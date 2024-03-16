@@ -144,33 +144,46 @@ const projectController = () => {
           const request = new sql.Request();
           const result = await request.query(`
           SELECT 
-              p.Project_Id, 
-              p.Project_Name, 
-              p.Est_Start_Dt, 
-              p.Est_End_Dt,
-              (SELECT COUNT(DISTINCT Emp_Id) AS InvolvedEmployees 
-               FROM tbl_Task_Details 
-               WHERE Project_Id = p.Project_Id) AS InvolvedEmployeesCount,
-                  
-          	 (SELECT COUNT(Task_Id) AS InvolvedTasks
-          	  FROM tbl_Task_Details
-          	  WHERE Project_Id = p.Project_Id AND T_Sub_Task_Id = 0) AS InvolvedTasksCount,
-                  
-          	  (SELECT COUNT(Task_Id) AS InvolvedSubTasks
-          	  FROM tbl_Task_Details
-          	  WHERE Project_Id = p.Project_Id AND T_Sub_Task_Id != 0) AS InvolvedSubTasksCount,
-                  
-          	  (SELECT COUNT(Task_Id) AS InvolvedTasksCompleted
-          	  FROM tbl_Task_Details
-          	  WHERE Project_Id = p.Project_Id AND Task_Stat_Id = 3 AND T_Sub_Task_Id = 0) AS CompletedTasks,
-                  
-          	  (SELECT COUNT(Task_Id) AS InvolvedSubTasksCompleted
-          	  FROM tbl_Task_Details
-          	  WHERE Project_Id = p.Project_Id AND Task_Stat_Id = 3 AND T_Sub_Task_Id != 0) AS CompletedSubTasks
-                  
-          FROM tbl_Project_Master AS p 
-          LEFT JOIN tbl_Task_Details AS td ON p.Project_Id = td.Project_Id
-          GROUP BY p.Project_Id, p.Project_Name, p.Est_Start_Dt, p.Est_End_Dt;`);
+            p.Project_Id, 
+            p.Project_Name, 
+            p.Est_Start_Dt, 
+            p.Est_End_Dt,
+
+            (SELECT COUNT(Sch_Id) FROM tbl_Project_Schedule WHERE Project_Id = p.Project_Id) AS SchedulesCount,
+
+            (
+          	SELECT 
+          			COUNT(t.Task_Id) 
+              FROM 
+          			tbl_Project_Schedule AS s
+          		JOIN 
+          			tbl_Project_Sch_Task_DT AS t 
+          			ON s.Sch_Id = t.Sch_Id
+              WHERE s.Project_Id = p.Project_Id
+            ) AS TasksInvolved,
+              
+          	(
+          		SELECT
+          			DISTINCT COUNT(Emp_Id)
+          		FROM 
+          			tbl_Task_Details
+          		WHERE 
+          			Project_Id = p.Project_Id
+          	) AS EmployeesInvolved,
+            
+          	(
+          		SELECT 
+          			COUNT(Task_Id) AS InvolvedTasksCompleted
+              FROM 
+          			tbl_Task_Details
+              WHERE 
+          			Project_Id = p.Project_Id 
+                AND 
+                Task_Status = 3 
+          	) AS CompletedTasks
+            
+          FROM 
+              tbl_Project_Master AS p`);
 
           if (result.recordset.length > 0) {
             resFun.dataFound(res, result.recordset)
