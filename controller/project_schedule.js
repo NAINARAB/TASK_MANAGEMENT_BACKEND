@@ -75,6 +75,8 @@ const Project_Scheduler = () => {
             				pst.Levl_Id = 1
             				AND 
             				pst.Task_Sch_Del_Flag = 0
+						ORDER BY
+							pst.Task_Est_Start_Date
             			FOR JSON PATH
             		), '[]'
             	) AS LevelOneTasks,
@@ -131,6 +133,8 @@ const Project_Scheduler = () => {
             				pst.Levl_Id = 2
             				AND 
             				pst.Task_Sch_Del_Flag = 0
+						ORDER BY
+							pst.Task_Est_Start_Date
             			FOR JSON PATH
             		), '[]'
             	) AS LevelTwoTasks,
@@ -187,6 +191,8 @@ const Project_Scheduler = () => {
             				pst.Levl_Id = 3
             				AND 
             				pst.Task_Sch_Del_Flag = 0
+						ORDER BY
+							pst.Task_Est_Start_Date
             			FOR JSON PATH
             		), '[]'
             	) AS LevelThreeTasks
@@ -274,6 +280,74 @@ const Project_Scheduler = () => {
         }
     }
 
+	const putSchedule = async (req, res) => {
+		const { Sch_Id, Sch_Date, Project_Id, Sch_By, Sch_Type_Id, Sch_Est_Start_Date, Sch_Status, Entry_By, Sch_Est_End_Date } = req.body;
+
+        if (!Sch_Id || !Sch_Date || !Project_Id || !Sch_By || !Sch_Type_Id || !Sch_Est_Start_Date || !Sch_Status || !Entry_By) {
+            return invalidInput(res, 'Sch_Id, Sch_Date, Project_Id, Sch_By, Sch_Type_Id, Sch_Est_Start_Date, Sch_Status, Entry_By is required');
+        }
+
+        try {
+            const request = new sql.Request();
+            request.input('Mode', 2)
+            request.input('Sch_Id', Sch_Id);
+            request.input('Sch_Date', Sch_Date)
+            request.input('Project_Id', Project_Id)
+            request.input('Sch_By', Sch_By)
+            request.input('Sch_Type_Id', Sch_Type_Id)
+            request.input('Sch_Est_Start_Date', Sch_Est_Start_Date)
+            request.input('Sch_Est_End_Date', Sch_Est_End_Date)
+            request.input('Sch_Status', Sch_Status)
+            request.input('Entry_By', Entry_By)
+            request.input('Entry_Date', new Date())
+
+            const result = await request.execute('Project_Schedule_SP');
+
+            if (result && result.rowsAffected && result.rowsAffected[0] > 0) {
+                return dataFound(res, [], 'Changes Saved')
+            } else {
+                return noData(res, 'Failed to Save')
+            }
+
+        } catch (e) {
+            servError(e, res)
+        }
+	}
+
+	const deleteSchedule = async (req, res) => {
+		const { Sch_Id } = req.body;
+
+        if (!Sch_Id) {
+            return invalidInput(res, 'Sch_Id is required');
+        }
+
+        try {
+            const request = new sql.Request();
+            request.input('Mode', 3)
+            request.input('Sch_Id', Sch_Id);
+            request.input('Sch_Date', '')
+            request.input('Project_Id', '')
+            request.input('Sch_By', '')
+            request.input('Sch_Type_Id', '')
+            request.input('Sch_Est_Start_Date', '')
+            request.input('Sch_Est_End_Date', '')
+            request.input('Sch_Status', '')
+            request.input('Entry_By', '')
+            request.input('Entry_Date', '')
+
+            const result = await request.execute('Project_Schedule_SP');
+
+            if (result && result.rowsAffected && result.rowsAffected[0] > 0) {
+                return dataFound(res, [], 'Changes Saved')
+            } else {
+                return noData(res, 'Failed to Save')
+            }
+
+        } catch (e) {
+            servError(e, res)
+        }
+	}
+
     const assignTaskInSchedule = async (req, res) => {
         const {
             Sch_Project_Id, Sch_Id, Task_Id, Task_Start_Time, Task_End_Time, Task_Sch_Duaration, Task_Est_Start_Date, Task_Est_End_Date,
@@ -316,8 +390,84 @@ const Project_Scheduler = () => {
         }
     }
 
+	const modifyTaskInSchedule = async (req, res) => {
+        const {
+            Sch_Project_Id, Sch_Id, Task_Levl_Id, Task_Id, Task_Start_Time, Task_End_Time, Task_Sch_Duaration, Task_Est_Start_Date, Task_Est_End_Date,
+            Task_Sch_Status, Levl_Id, Task_Depend_Level_Id, Type_Task_Id
+        } = req.body;
 
+        if (!Sch_Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !Task_Start_Time || !Task_End_Time || !Task_Sch_Duaration || !Task_Est_Start_Date || !Task_Est_End_Date || !Task_Sch_Status || !Type_Task_Id) {
+            return invalidInput(res, 'Sch_Project_Id, Sch_Id, Task_Levl_Id, Task_Id, Task_Start_Time, Task_End_Time, Task_Est_Start_Date, Task_Est_End_Date, Task_Sch_Status, Type_Task_Id is required')
+        }
 
+        console.log(Task_Est_Start_Date)
+
+        try {
+            const request = new sql.Request();
+            request.input('Mode', 2)
+            request.input('Sch_Project_Id', Sch_Project_Id)
+            request.input('Sch_Id', Sch_Id)
+            request.input('Task_Levl_Id', Task_Levl_Id)
+            request.input('Task_Id', Task_Id)
+            request.input('Type_Task_Id', Type_Task_Id)
+            request.input('Task_Sch_Duaration', Task_Sch_Duaration)
+            request.input('Task_Start_Time', Task_Start_Time)
+            request.input('Task_End_Time', Task_End_Time)
+            request.input('Task_Est_Start_Date', Task_Est_Start_Date)
+            request.input('Task_Est_End_Date', Task_Est_End_Date)
+            request.input('Task_Sch_Status', Task_Sch_Status)
+            request.input('Levl_Id', Levl_Id)
+            request.input('Task_Depend_Level_Id', Task_Depend_Level_Id)
+
+            const result = await request.execute('Project_Sch_Task_DT_SP');
+
+            if(result && result.rowsAffected && result.rowsAffected[0] > 0) {
+                dataFound(res, [], 'Changes Saved')
+            } else {
+                noData(res, 'Failed to Save Changes')
+            }
+
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
+	const deleteTaskInSchedule = async (req, res) => {
+        const { Task_Levl_Id } = req.body;
+
+        if (!Task_Levl_Id) {
+            return invalidInput(res, 'Task_Levl_Id is required')
+        }
+
+        try {
+            const request = new sql.Request();
+            request.input('Mode', 3)
+            request.input('Sch_Project_Id', '')
+            request.input('Sch_Id', '')
+            request.input('Task_Levl_Id', Task_Levl_Id)
+            request.input('Task_Id', '')
+            request.input('Type_Task_Id', '')
+            request.input('Task_Sch_Duaration', '')
+            request.input('Task_Start_Time', '')
+            request.input('Task_End_Time', '')
+            request.input('Task_Est_Start_Date', '')
+            request.input('Task_Est_End_Date', '')
+            request.input('Task_Sch_Status', '')
+            request.input('Levl_Id', '')
+            request.input('Task_Depend_Level_Id', '')
+
+            const result = await request.execute('Project_Sch_Task_DT_SP');
+
+            if(result && result.rowsAffected && result.rowsAffected[0] > 0) {
+                dataFound(res, [], 'Task Deleted')
+            } else {
+                noData(res, 'Failed to Delete Task')
+            }
+
+        } catch (e) {
+            servError(e, res)
+        }
+    }
 
 
 
@@ -326,8 +476,11 @@ const Project_Scheduler = () => {
         getSchedule,
         getScheduleType,
         createSchedule,
+		putSchedule,
+		deleteSchedule,
         assignTaskInSchedule,
-
+		modifyTaskInSchedule,
+		deleteTaskInSchedule,
     }
 }
 

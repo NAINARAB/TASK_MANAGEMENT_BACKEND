@@ -149,17 +149,21 @@ const projectController = () => {
             p.Est_Start_Dt, 
             p.Est_End_Dt,
 
-            (SELECT COUNT(Sch_Id) FROM tbl_Project_Schedule WHERE Project_Id = p.Project_Id) AS SchedulesCount,
+            (SELECT COUNT(Sch_Id) FROM tbl_Project_Schedule WHERE Project_Id = p.Project_Id AND Sch_Del_Flag = 0) AS SchedulesCount,
 
             (
-          	SELECT 
+          	  SELECT 
           			COUNT(t.Task_Id) 
               FROM 
           			tbl_Project_Schedule AS s
           		JOIN 
           			tbl_Project_Sch_Task_DT AS t 
           			ON s.Sch_Id = t.Sch_Id
-              WHERE s.Project_Id = p.Project_Id
+              WHERE 
+                s.Project_Id = p.Project_Id
+                AND 
+                s.Sch_Del_Flag = 0
+              
             ) AS TasksInvolved,
               
           	(
@@ -178,8 +182,6 @@ const projectController = () => {
           			tbl_Task_Details
               WHERE 
           			Project_Id = p.Project_Id 
-                AND 
-                Task_Status = 3 
           	) AS CompletedTasks
             
           FROM 

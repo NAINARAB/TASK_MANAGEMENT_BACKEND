@@ -13,6 +13,7 @@ const taskModule = require('../controller/taskModule');
 const workController = require('../controller/workEntry');
 const ChatController = require('../controller/chatManagement');
 const Project_Scheduler = require('../controller/project_schedule')
+const TaskAssignControl = require('../controller/taskAssign')
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -133,8 +134,19 @@ router.get('/files/download', ChatController.downloadDocument);
 router.get('/project/schedule/scheduleType', Project_Scheduler.getScheduleType);
 router.get('/project/schedule', Project_Scheduler.getSchedule);
 router.post('/project/schedule', Project_Scheduler.createSchedule);
+router.put('/project/schedule', Project_Scheduler.putSchedule);
+router.delete('/project/schedule', Project_Scheduler.deleteSchedule)
 
 router.post('/project/schedule/scheduleTask', Project_Scheduler.assignTaskInSchedule)
+router.put('/project/schedule/scheduleTask', Project_Scheduler.modifyTaskInSchedule)
+router.delete('/project/schedule/scheduleTask', Project_Scheduler.deleteTaskInSchedule)
+
+
+router.get('/task/empTasks', TaskAssignControl.getEmployeeTasks)
+router.get('/task/assignEmployee', TaskAssignControl.getAssignedEmployeeForTask)
+router.post('/task/assignEmployee', TaskAssignControl.assignTaskForEmployee)
+router.put('/task/assignEmployee', TaskAssignControl.putAssignTaskForEmployee)
+
 
 
 module.exports = router;
