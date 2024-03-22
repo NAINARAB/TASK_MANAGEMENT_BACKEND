@@ -1,5 +1,5 @@
 const sql = require('mssql');
-const { dataFound, noData, servError, invalidInput } = require("./res");
+const { dataFound, noData, servError, invalidInput, falied } = require("./res");
 
 
 const TaskAssignControl = () => {
@@ -40,30 +40,95 @@ const TaskAssignControl = () => {
     }
 
     const getEmployeeTasks = async (req, res) => {
-        const { Emp_Id } = req.query;
+        const { Emp_Id, reqDate } = req.query;
+        console.log(req.query)
 
         if (!Emp_Id) {
             return invalidInput(res, 'Emp_Id is required');
         }
 
         try {
-            const getQuery = `
+            // const getQuery = `
+            // SELECT 
+            //     td.*,
+            //     (SELECT Name FROM tbl_Users WHERE UserId = td.Assigned_Emp_Id) AS AssignedUser,
+            //     (SELECT Name FROM tbl_Users WHERE UserId = td.Emp_Id) AS EmployeeName,
+            //     (SELECT Task_Name FROM tbl_Task WHERE Task_Id = td.Task_Id) AS TaskNameGet,
+            //     (SELECT Project_Name FROM tbl_Project_Master WHERE Project_Id = td.Project_Id) AS ProjectGet
+
+            // FROM 
+            //     tbl_Task_Details AS td
+            // WHERE 
+            //     td.Emp_Id = @emp
+            // AND 
+            //     td.Est_Start_Dt <= @date
+            // AND
+            //     td.Est_End_Dt >= @date`
+
+            const request = new sql.Request()
+            request.input('Emp_Id', Emp_Id)
+            request.input('Work_Date', reqDate)
+
+            const result = await request.execute('Task_Search_By_Online_Emp_Id');
+
+            if (result.recordset) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
+    const todayTasks = async (req, res) => {
+        const { Emp_Id } = req.query;
+
+        if(!Number(Emp_Id)) {
+            return invalidInput(res, 'Emp_Id is required')
+        }
+
+        try {
+            const query = `
             SELECT 
                 td.*,
-                (SELECT Name FROM tbl_Users WHERE UserId = td.Assigned_Emp_Id) AS AssignedUser,
+                (SELECT Name FROM tbl_Users WHERE UserId = td.Assigned_Emp_Id) AS Assigned_Name,
+
                 (SELECT Name FROM tbl_Users WHERE UserId = td.Emp_Id) AS EmployeeName,
-                (SELECT Task_Name FROM tbl_Task WHERE Task_Id = td.Task_Id) AS TaskNameGet,
-                (SELECT Project_Name FROM tbl_Project_Master WHERE Project_Id = td.Project_Id) AS ProjectGet
-                
+
+                (
+                    SELECT 
+                        u.Name 
+                    FROM 
+                        tbl_Users AS u 
+                    JOIN
+                        tbl_Project_Master p
+                        ON u.UserId = p.Project_Head 
+                    WHERE 
+                        p.Project_Id = td.Project_Id
+                ) AS Project_Head_Name,
+
+                (SELECT Task_Name FROM tbl_Task WHERE Task_Id = td.Task_Id) AS Task_Name,
+                (SELECT Task_Desc FROM tbl_Task WHERE Task_Id = td.Task_Id) AS Task_Desc,
+                (SELECT Project_Name FROM tbl_Project_Master WHERE Project_Id = td.Project_Id) AS Project_Name
+
             FROM 
                 tbl_Task_Details AS td
             WHERE 
-                td.Emp_Id = @empid`
+                td.Emp_Id = @emp
+            AND 
+                CONVERT(DATE, td.Est_Start_Dt) <= @date
+            AND
+                CONVERT(DATE, td.Est_End_Dt) >= @date
+            ORDER BY 
+                CONVERT(TIME, td.Sch_Time, 108)`
 
             const request = new sql.Request()
-            request.input('empid', Emp_Id)
+            request.input('emp', Emp_Id)
+            request.input('date', new Date().toISOString().split('T')[0])
 
-            const result = await request.query(getQuery)
+            const result = await request.query(query)
 
             if (result.recordset.length > 0) {
                 dataFound(res, result.recordset)
@@ -75,7 +140,6 @@ const TaskAssignControl = () => {
             servError(e, res)
         }
     }
-
 
     const assignTaskForEmployee = async (req, res) => {
         const {
@@ -108,7 +172,7 @@ const TaskAssignControl = () => {
             request.input('Est_Start_Dt', Est_Start_Dt)
             request.input('Est_End_Dt', Est_End_Dt)
             request.input('Ord_By', Number(Ord_By) || 1)
-            request.input('Timer_Based', Boolean(Number(Timer_Based)) ? 1 : 0 )
+            request.input('Timer_Based', Boolean(Number(Timer_Based)) ? 1 : 0)
             request.input('Invovled_Stat', 1)
 
             const result = await request.execute('Task_Assign_SP');
@@ -132,7 +196,7 @@ const TaskAssignControl = () => {
         } = req.body;
         console.log(req.body)
 
-        if ( !AN_No || !Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !Assigned_Emp_Id || !Emp_Id || !Sch_Period || !Sch_Time
+        if (!AN_No || !Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !Assigned_Emp_Id || !Emp_Id || !Sch_Period || !Sch_Time
             || !EN_Time || !Est_Start_Dt || !Est_End_Dt) {
             return invalidInput(res, `
             AN_No, Project_Id, Sch_Id, Task_Levl_Id, Task_Id, Assigned_Emp_Id, Emp_Id, Sch_Period, Sch_Time,
@@ -157,8 +221,8 @@ const TaskAssignControl = () => {
             request.input('Est_Start_Dt', Est_Start_Dt)
             request.input('Est_End_Dt', Est_End_Dt)
             request.input('Ord_By', Number(Ord_By) || 1)
-            request.input('Timer_Based', Boolean(Number(Timer_Based)) ? 1 : 0 )
-            request.input('Invovled_Stat', Boolean(Number(Invovled_Stat)) ? 1 : 0 )
+            request.input('Timer_Based', Boolean(Number(Timer_Based)) ? 1 : 0)
+            request.input('Invovled_Stat', Boolean(Number(Invovled_Stat)) ? 1 : 0)
 
             const result = await request.execute('Task_Assign_SP');
 
@@ -174,11 +238,15 @@ const TaskAssignControl = () => {
         }
     }
 
+    
+
     return {
         getAssignedEmployeeForTask,
         getEmployeeTasks,
         assignTaskForEmployee,
-        putAssignTaskForEmployee
+        putAssignTaskForEmployee,
+        todayTasks,
+
     }
 }
 

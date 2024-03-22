@@ -52,6 +52,9 @@ router.get('/startTask', workController.getTaskStartTime);
 router.post('/startTask', workController.postStartTime);
 router.delete('/startTask', workController.deleteTaskTime);
 
+router.post('/saveWork', workController.postWorkedTask);
+router.get('/myTodayWorks', workController.getEmployeeWorkedTask)
+
 router.get('/subTask', taskModule.getSubTask);
 router.post('/subTask', taskModule.postSubTask);
 router.put('/subTask', taskModule.putSubTask);  
@@ -142,7 +145,8 @@ router.put('/project/schedule/scheduleTask', Project_Scheduler.modifyTaskInSched
 router.delete('/project/schedule/scheduleTask', Project_Scheduler.deleteTaskInSchedule)
 
 
-router.get('/task/empTasks', TaskAssignControl.getEmployeeTasks)
+router.get('/todayTasks', TaskAssignControl.todayTasks)
+router.get('/task/myTasks', TaskAssignControl.getEmployeeTasks)
 router.get('/task/assignEmployee', TaskAssignControl.getAssignedEmployeeForTask)
 router.post('/task/assignEmployee', TaskAssignControl.assignTaskForEmployee)
 router.put('/task/assignEmployee', TaskAssignControl.putAssignTaskForEmployee)
