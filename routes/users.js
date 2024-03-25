@@ -147,6 +147,7 @@ router.delete('/project/schedule/scheduleTask', Project_Scheduler.deleteTaskInSc
 
 router.get('/todayTasks', TaskAssignControl.todayTasks)
 router.get('/task/myTasks', TaskAssignControl.getEmployeeTasks)
+router.get('/task/workDone', workController.getAllWorkedDataOfEmp)
 router.get('/task/assignEmployee', TaskAssignControl.getAssignedEmployeeForTask)
 router.post('/task/assignEmployee', TaskAssignControl.assignTaskForEmployee)
 router.put('/task/assignEmployee', TaskAssignControl.putAssignTaskForEmployee)

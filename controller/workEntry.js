@@ -185,6 +185,57 @@ const workController = () => {
         }
     }
 
+    const getAllWorkedDataOfEmp = async (req, res) => {
+        const { Emp_Id } = req.query;
+
+        if (!Emp_Id) {
+            return invalidInput(res, 'Emp_Id is required')
+        }
+
+        try {
+            const query = `
+            SELECT
+            	wm.*,
+            	p.Project_Name,
+            	t.Task_Name,
+            	u.Name AS EmployeeName,
+            	s.Status AS WorkStatus,
+				td.Timer_Based
+            FROM 
+            	tbl_Work_Master AS wm
+            LEFT JOIN
+            	tbl_Project_Master AS p
+            	ON p.Project_Id = wm.Project_Id
+            LEFT JOIN 
+            	tbl_Task AS t
+            	ON t.Task_Id = wm.Task_Id
+            LEFT JOIN
+            	tbl_Users AS u
+            	ON u.UserId = wm.Emp_Id
+            LEFT JOIN
+            	tbl_Status AS s
+            	ON s.Status_Id = wm.Work_Status
+			LEFT JOIN
+				tbl_Task_Details AS td
+				ON td.Task_Levl_Id = wm.Task_Levl_Id
+            WHERE 
+            	wm.Emp_Id = '${Emp_Id}'
+            	AND
+				wm.AN_No = td.AN_No
+            ORDER BY 
+				wm.Start_Time`;
+            
+            const result = await sql.query(query);
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
 
 
     return {
@@ -192,7 +243,8 @@ const workController = () => {
         getTaskStartTime,
         deleteTaskTime,
         getEmployeeWorkedTask,
-        postWorkedTask
+        postWorkedTask,
+        getAllWorkedDataOfEmp,
     }
 }
 

@@ -163,12 +163,14 @@ const projectController = () => {
                 s.Project_Id = p.Project_Id
                 AND 
                 s.Sch_Del_Flag = 0
+                AND
+                t.Task_Sch_Del_Flag = 0
               
             ) AS TasksInvolved,
               
           	(
           		SELECT
-          			DISTINCT COUNT(Emp_Id)
+                COUNT(DISTINCT Emp_Id)
           		FROM 
           			tbl_Task_Details
           		WHERE 
@@ -177,11 +179,13 @@ const projectController = () => {
             
           	(
           		SELECT 
-          			COUNT(Task_Id) AS InvolvedTasksCompleted
-              FROM 
-          			tbl_Task_Details
-              WHERE 
+          			COUNT(DISTINCT Task_Levl_Id) 
+				      FROM 
+          			tbl_Work_Master
+				      WHERE 
           			Project_Id = p.Project_Id 
+					      AND
+					      Work_Status = 3
           	) AS CompletedTasks
             
           FROM 
