@@ -130,117 +130,9 @@ const taskModule = () => {
     }
   }
 
-  const getSubTask = async (req, res) => {
-    const { TaskId } = req.query;
+  // oldCode
 
-    if (!TaskId) {
-      return invalidInput(res, 'TaskId is required');
-    }
-
-    try {
-      const request = new sql.Request();
-      request.input('Task_Id', TaskId);
-      const result = await request.execute(`Task_vw_By_Id`);
-      if (result && result.recordsets) {
-        return dataFound(res, result.recordsets)
-      } else {
-        return noData(res)
-      }
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
-  const postSubTask = async (req, res) => {
-    const { Task_Id, Sub_Task, Sub_Task_Desc, SStatus_Id, Entry_By } = req.body;
-
-    if (!Task_Id || !Sub_Task || !Sub_Task_Desc || !Entry_By || !SStatus_Id) {
-      return invalidInput(res, 'Task_Id, Sub_Task, Sub_Task_Desc, Entry_By, SStatus_Id is required')
-    }
-
-    try {
-      const request = new sql.Request();
-      request.input('Mode', 1)
-      request.input('Sub_Task_Id', 0)
-      request.input('Task_Id', Task_Id);
-      request.input('Sub_Task', Sub_Task);
-      request.input('Sub_Task_Desc', Sub_Task_Desc);
-      request.input('SStatus_Id', SStatus_Id)
-      request.input('Entry_By', Entry_By);
-      request.input('Entry_Date', new Date());
-
-      const result = await request.execute('Sub_Task_SP');
-
-      if (result.rowsAffected.length > 0) {
-        return dataFound(res, [], 'SubTask Created!');
-      } else {
-        return falied(res, 'Failed to create SubTask')
-      }
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
-  const putSubTask = async (req, res) => {
-    const { Sub_Task_Id, Task_Id, Sub_Task, Sub_Task_Desc, Entry_By, SStatus_Id } = req.body;
-
-    if (!Task_Id || !Sub_Task || !Sub_Task_Desc || !Entry_By || !Sub_Task_Id || !SStatus_Id) {
-      return invalidInput(res, 'Sub_Task_Id, Task_Id, Sub_Task, Sub_Task_Desc, Entry_By, SStatus_Id is required')
-    }
-
-    try {
-      const request = new sql.Request();
-      request.input('Mode', 2)
-      request.input('Sub_Task_Id', Sub_Task_Id)
-      request.input('Task_Id', Task_Id);
-      request.input('Sub_Task', Sub_Task);
-      request.input('SStatus_Id', SStatus_Id);
-      request.input('Sub_Task_Desc', Sub_Task_Desc);
-      request.input('Entry_By', Entry_By);
-      request.input('Entry_Date', new Date());
-
-      const result = await request.execute('Sub_Task_SP');
-
-      if (result.rowsAffected.length > 0) {
-        return dataFound(res, [], 'Changes Saved!');
-      } else {
-        return falied(res, 'Failed To Save')
-      }
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
-  const deleteSubTask = async (req, res) => {
-    const { Sub_Task_Id } = req.body;
-
-    if (!Sub_Task_Id) {
-      return invalidInput(res, 'Sub_Task_Id is required')
-    }
-
-    try {
-      const request = new sql.Request();
-      request.input('Mode', 3)
-      request.input('Sub_Task_Id', Sub_Task_Id)
-      request.input('Task_Id', 0);
-      request.input('Sub_Task', 0);
-      request.input('Sub_Task_Desc', 0);
-      request.input('SStatus_Id', 0)
-      request.input('Entry_By', 0);
-      request.input('Entry_Date', new Date());
-
-      const result = await request.execute('Sub_Task_SP');
-
-      if (result.rowsAffected.length > 0) {
-        return dataFound(res, [], 'One Task Deleted!');
-      } else {
-        return falied(res, 'Failed To Delete')
-      }
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
+  
   const assignEmployeeForTask = async (req, res) => {
     const { Task_Id, Sub_Task_Id, Emp_Id, Task_Assign_dt, Prity, Sch_Time, EN_Time, Ord_By, Timer_Based, Assigned_Emp_Id } = req.body;
 
@@ -406,10 +298,6 @@ const taskModule = () => {
     createTask,
     editTask,
     deleteTask,
-    getSubTask,
-    postSubTask,
-    putSubTask,
-    deleteSubTask,
     assignEmployeeForTask,
     editAssignEmployeeForTask,
     deleteAssignEmployeeForTask,

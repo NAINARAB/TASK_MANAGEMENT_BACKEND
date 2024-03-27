@@ -189,7 +189,9 @@ const projectController = () => {
           	) AS CompletedTasks
             
           FROM 
-              tbl_Project_Master AS p`);
+              tbl_Project_Master AS p
+          WHERE 
+              p.Project_Status != 3 AND p.Project_Status != 4 `);
 
           if (result.recordset.length > 0) {
             resFun.dataFound(res, result.recordset)

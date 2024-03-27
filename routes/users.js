@@ -13,7 +13,9 @@ const taskModule = require('../controller/taskModule');
 const workController = require('../controller/workEntry');
 const ChatController = require('../controller/chatManagement');
 const Project_Scheduler = require('../controller/project_schedule')
-const TaskAssignControl = require('../controller/taskAssign')
+const TaskAssignControl = require('../controller/taskAssign');
+const DashboardController = require('../controller/dashboard');
+const NotificationController = require('../controller/notification');
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -55,14 +57,9 @@ router.delete('/startTask', workController.deleteTaskTime);
 router.post('/saveWork', workController.postWorkedTask);
 router.get('/myTodayWorks', workController.getEmployeeWorkedTask)
 
-router.get('/subTask', taskModule.getSubTask);
-router.post('/subTask', taskModule.postSubTask);
-router.put('/subTask', taskModule.putSubTask);  
-router.delete('/subTask', taskModule.deleteSubTask);
-
-router.post('/assignEmployee', taskModule.assignEmployeeForTask);
-router.put('/assignEmployee', taskModule.editAssignEmployeeForTask);
-router.delete('/assignEmployee', taskModule.deleteAssignEmployeeForTask);
+// router.post('/assignEmployee', taskModule.assignEmployeeForTask);
+// router.put('/assignEmployee', taskModule.editAssignEmployeeForTask);
+// router.delete('/assignEmployee', taskModule.deleteAssignEmployeeForTask);
 
 router.get('/taskStatus', usercontroller.getTaskStatus);
 
@@ -147,10 +144,18 @@ router.delete('/project/schedule/scheduleTask', Project_Scheduler.deleteTaskInSc
 
 router.get('/todayTasks', TaskAssignControl.todayTasks)
 router.get('/task/myTasks', TaskAssignControl.getEmployeeTasks)
+
 router.get('/task/workDone', workController.getAllWorkedDataOfEmp)
+router.get('/workReport', workController.getAllWorkedData)
+
 router.get('/task/assignEmployee', TaskAssignControl.getAssignedEmployeeForTask)
 router.post('/task/assignEmployee', TaskAssignControl.assignTaskForEmployee)
-router.put('/task/assignEmployee', TaskAssignControl.putAssignTaskForEmployee)
+router.put('/task/assignEmployee', TaskAssignControl.putAssignTaskForEmployee);
+router.get('/task/workedDetails', TaskAssignControl.getWorkedDetailsForTask)
+
+router.get('/dashboardData', DashboardController.getDashboardData);
+router.get('/notification', NotificationController.getNotificartion);
+router.post('/notification', NotificationController.postNotificartion)
 
 
 

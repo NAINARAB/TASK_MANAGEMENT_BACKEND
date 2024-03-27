@@ -97,40 +97,119 @@ const workController = () => {
         }
 
         try {
+            // const query = `
+            // SELECT
+            // 	wm.*,
+            // 	p.Project_Name,
+            // 	t.Task_Name,
+            // 	u.Name AS EmployeeName,
+            // 	s.Status AS WorkStatus,
+			// 	td.Timer_Based
+            // FROM 
+            // 	tbl_Work_Master AS wm
+            // LEFT JOIN
+            // 	tbl_Project_Master AS p
+            // 	ON p.Project_Id = wm.Project_Id
+            // LEFT JOIN 
+            // 	tbl_Task AS t
+            // 	ON t.Task_Id = wm.Task_Id
+            // LEFT JOIN
+            // 	tbl_Users AS u
+            // 	ON u.UserId = wm.Emp_Id
+            // LEFT JOIN
+            // 	tbl_Status AS s
+            // 	ON s.Status_Id = wm.Work_Status
+			// LEFT JOIN
+			// 	tbl_Task_Details AS td
+			// 	ON td.Task_Levl_Id = wm.Task_Levl_Id
+            // WHERE 
+            // 	wm.Emp_Id = '${Emp_Id}'
+            // 	AND
+            // 	CONVERT(DATE, wm.Work_DT) = CONVERT(DATE, '${reqDate || new Date()}')
+            //     AND
+			// 	wm.AN_No = td.AN_No
+            // ORDER BY 
+			// 	wm.Start_Time`;
+            
+            // const query = `
+            // SELECT
+            // 	wm.*,
+            // 	p.Project_Name,
+            // 	t.Task_Name,
+            // 	u.Name AS EmployeeName,
+            // 	s.Status AS WorkStatus,
+
+			// 	(
+			// 		SELECT 
+			// 			ISNULL(
+			// 				Timer_Based,
+			// 				0
+			// 			)
+			// 		FROM 
+			// 			tbl_Task_Details
+			// 		WHERE
+			// 			AN_No = wm.AN_No
+			// 	) AS Timer_Based
+
+            // FROM 
+            // 	tbl_Work_Master AS wm
+            // LEFT JOIN
+            // 	tbl_Project_Master AS p
+            // 	ON p.Project_Id = wm.Project_Id
+            // LEFT JOIN 
+            // 	tbl_Task AS t
+            // 	ON t.Task_Id = wm.Task_Id
+            // LEFT JOIN
+            // 	tbl_Users AS u
+            // 	ON u.UserId = wm.Emp_Id
+            // LEFT JOIN
+            // 	tbl_Status AS s
+            // 	ON s.Status_Id = wm.Work_Status
+			// LEFT JOIN
+			// 	tbl_Task_Details AS td
+			// 	ON td.Task_Levl_Id = wm.Task_Levl_Id
+            // WHERE 
+            // 	wm.Emp_Id = '${Emp_Id}'
+            // 	AND
+            // 	CONVERT(DATE, wm.Work_DT) = CONVERT(DATE, '${reqDate ? reqDate : new Date()}')
+            //     AND
+			// 	(wm.AN_No = td.AN_No OR wm.AN_No = NULL)
+            // ORDER BY 
+			// 	wm.Start_Time`;
+
             const query = `
             SELECT
-            	wm.*,
-            	p.Project_Name,
-            	t.Task_Name,
-            	u.Name AS EmployeeName,
-            	s.Status AS WorkStatus,
-				td.Timer_Based
+                wm.*,
+                p.Project_Name,
+                t.Task_Name,
+                u.Name AS EmployeeName,
+                s.Status AS WorkStatus,
+
+                COALESCE(
+                    (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
+                    0
+                ) AS Timer_Based
+                
             FROM 
-            	tbl_Work_Master AS wm
+                tbl_Work_Master AS wm
             LEFT JOIN
-            	tbl_Project_Master AS p
-            	ON p.Project_Id = wm.Project_Id
+                tbl_Project_Master AS p ON p.Project_Id = wm.Project_Id
             LEFT JOIN 
-            	tbl_Task AS t
-            	ON t.Task_Id = wm.Task_Id
+                tbl_Task AS t ON t.Task_Id = wm.Task_Id
             LEFT JOIN
-            	tbl_Users AS u
-            	ON u.UserId = wm.Emp_Id
+                tbl_Users AS u ON u.UserId = wm.Emp_Id
             LEFT JOIN
-            	tbl_Status AS s
-            	ON s.Status_Id = wm.Work_Status
-			LEFT JOIN
-				tbl_Task_Details AS td
-				ON td.Task_Levl_Id = wm.Task_Levl_Id
+                tbl_Status AS s ON s.Status_Id = wm.Work_Status
+            LEFT JOIN
+                tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
+                
             WHERE 
-            	wm.Emp_Id = '${Emp_Id}'
-            	AND
-            	CONVERT(DATE, wm.Work_DT) = CONVERT(DATE, '${reqDate || new Date()}')
-                AND
-				wm.AN_No = td.AN_No
+                wm.Emp_Id = '${Emp_Id}'
+                AND CONVERT(DATE, wm.Work_DT) = CONVERT(DATE, '${reqDate ? reqDate : new Date()}')
+                AND (wm.AN_No = td.AN_No OR wm.AN_No = 0)
+                
             ORDER BY 
-				wm.Start_Time`;
-            
+                wm.Start_Time`
             const result = await sql.query(query);
 
             if (result.recordset.length > 0) {
@@ -146,8 +225,8 @@ const workController = () => {
     const postWorkedTask = async (req, res) => {
         const { Mode, Work_Id, Project_Id, Sch_Id, Task_Levl_Id, Task_Id, AN_No, Emp_Id, Work_Dt, Work_Done, Start_Time, End_Time, Work_Status } = req.body;
         
-        if (!Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !AN_No || !Emp_Id || !Work_Done || !Start_Time || !End_Time || !Work_Status ) {
-            return invalidInput(res, 'Project_Id, Sch_Id, Task_Levl_Id, Task_Id, AN_No, Emp_Id, Work_Done, Start_Time, End_Time, Work_Status is required')
+        if (!Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !Emp_Id || !Work_Done || !Start_Time || !End_Time || !Work_Status ) {
+            return invalidInput(res, 'Project_Id, Sch_Id, Task_Levl_Id, Task_Id, Emp_Id, Work_Done, Start_Time, End_Time, Work_Status is required')
         }
 
         if (Number(Mode) === 2 && Number(Work_Id) === 0) {
@@ -237,6 +316,52 @@ const workController = () => {
         }
     }
 
+    const getAllWorkedData = async (req, res) => {
+        try {
+            const query = `
+            SELECT
+                wm.*,
+                p.Project_Name,
+                t.Task_Name,
+                u.Name AS EmployeeName,
+                s.Status AS WorkStatus,
+
+                COALESCE(
+                    (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
+                    0
+                ) AS Timer_Based
+                
+            FROM 
+                tbl_Work_Master AS wm
+            LEFT JOIN
+                tbl_Project_Master AS p ON p.Project_Id = wm.Project_Id
+            LEFT JOIN 
+                tbl_Task AS t ON t.Task_Id = wm.Task_Id
+            LEFT JOIN
+                tbl_Users AS u ON u.UserId = wm.Emp_Id
+            LEFT JOIN
+                tbl_Status AS s ON s.Status_Id = wm.Work_Status
+            LEFT JOIN
+                tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
+                
+            WHERE 
+                (wm.AN_No = td.AN_No OR wm.AN_No = 0)
+                
+            ORDER BY 
+                wm.Start_Time`;
+            
+            const result = await sql.query(query);
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
 
     return {
         postStartTime,
@@ -245,6 +370,7 @@ const workController = () => {
         getEmployeeWorkedTask,
         postWorkedTask,
         getAllWorkedDataOfEmp,
+        getAllWorkedData
     }
 }
 

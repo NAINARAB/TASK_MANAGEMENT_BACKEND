@@ -238,7 +238,52 @@ const TaskAssignControl = () => {
         }
     }
 
-    
+    const getWorkedDetailsForTask = async (req, res) => {
+        const { Task_Levl_Id } = req.query;
+
+        if (!Task_Levl_Id) {
+            return invalidInput(res, 'Task_Levl_Id is required')
+        }
+
+        try {
+            const query = `
+            SELECT
+                wm.*,
+                t.Task_Name,
+                u.Name AS EmployeeName,
+                s.Status AS WorkStatus,
+
+                COALESCE(
+                    (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
+                    0
+                ) AS Timer_Based
+                
+            FROM 
+                tbl_Work_Master AS wm
+            LEFT JOIN 
+                tbl_Task AS t ON t.Task_Id = wm.Task_Id
+            LEFT JOIN
+                tbl_Users AS u ON u.UserId = wm.Emp_Id
+            LEFT JOIN
+                tbl_Status AS s ON s.Status_Id = wm.Work_Status
+                
+            WHERE 
+				wm.Task_Levl_Id = ${Task_Levl_Id}
+                
+            ORDER BY 
+                wm.Start_Time`
+
+            const result = await sql.query(query);
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
 
     return {
         getAssignedEmployeeForTask,
@@ -246,7 +291,7 @@ const TaskAssignControl = () => {
         assignTaskForEmployee,
         putAssignTaskForEmployee,
         todayTasks,
-
+        getWorkedDetailsForTask,
     }
 }
 
