@@ -1,5 +1,5 @@
 const sql = require('mssql');
-const { invalidInput, servError, dataFound, noData } = require('./res');
+const { invalidInput, servError, dataFound, noData, falied } = require('./res');
 
 
 
@@ -95,6 +95,8 @@ const DashboardRouter = () => {
                         tbl_Work_Master
                     WHERE
                         Work_Status = 3
+                        AND
+                        Project_Id != 1
                 ) AS TaskCompleted,
                 
                 (
@@ -104,6 +106,8 @@ const DashboardRouter = () => {
                         tbl_Work_Master
                     WHERE
                         Work_Status = 3
+                        AND
+                        Project_Id != 1
                 ) AS TotalMinutes,
 
                 (
@@ -190,7 +194,7 @@ const DashboardRouter = () => {
 	            		Emp_Id = ${Emp_Id}
 	            ) AS TodayTaskCompleted`
 
-            const result = await sql.query(isAdmin ? adminQuery : employeeQuery) 
+            const result = await sql.query(isAdmin ? adminQuery : employeeQuery)
 
             if (result.recordset.length > 0) {
                 dataFound(res, result.recordset)
@@ -202,8 +206,77 @@ const DashboardRouter = () => {
         }
     }
 
+    const getUserByAuth = async (req, res) => {
+        const { Auth } = req.query;
+
+        if (!Auth) {
+            return invalidInput(res, 'Auth is required');
+        }
+
+        try {
+            const query = `
+            SELECT
+            	u.*,
+            	COALESCE(
+            		ut.UserType,
+            		'UnKnown UserType'
+            	) AS UserType,
+            	COALESCE(
+            		b.BranchName,
+            		'Unknown Branch'
+            	) AS BranchName,
+            	COALESCE(
+            		c.Company_id,
+            		'0'
+            	) AS Company_id,
+                
+            	(
+            		SELECT 
+            			TOP (1)
+            			UserId,
+            			SessionId,
+            			InTime
+            		FROM
+            			tbl_User_Log
+            		WHERE
+            			UserId = u.UserId
+            		ORDER BY
+            			InTime DESC
+            			FOR JSON PATH
+            	) AS session
+                
+            FROM 
+            	tbl_Users AS u
+            LEFT JOIN
+            	tbl_User_Type AS ut
+            	ON ut.Id = u.UserTypeId
+            LEFT JOIN
+            	tbl_Business_Master AS b
+            	ON b.BranchId = u.BranchId
+            LEFT JOIN
+            	tbl_Company_Master AS c
+            	ON c.Company_id = b.Company_id
+                
+            WHERE
+            	Autheticate_Id = '${Auth}'
+            `;
+
+            const result = await sql.query(query);
+
+            if (result.recordset.length > 0) {
+                result.recordset[0].session = JSON.parse(result.recordset[0].session)
+                return dataFound(res, result.recordset)
+            } else {
+                return falied(res, 'User Not Found')
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
     return {
-        getDashboardData
+        getDashboardData,
+        getUserByAuth,
     }
 }
 

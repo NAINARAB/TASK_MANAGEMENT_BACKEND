@@ -155,7 +155,9 @@ router.get('/task/workedDetails', TaskAssignControl.getWorkedDetailsForTask)
 
 router.get('/dashboardData', DashboardController.getDashboardData);
 router.get('/notification', NotificationController.getNotificartion);
-router.post('/notification', NotificationController.postNotificartion)
+router.post('/notification', NotificationController.postNotificartion);
+
+router.get('/getUserByAuth', DashboardController.getUserByAuth); 
 
 
 
