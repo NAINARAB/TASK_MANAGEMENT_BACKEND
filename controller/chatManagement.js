@@ -293,8 +293,6 @@ const ChatController = () => {
         const filetype = req?.file?.mimetype;
         const filesize = req?.file?.size
 
-        console.log(req.file)
-
         const { Topic_Id, Project_Id, User_Id } = req.body;
 
         if (!Project_Id || !User_Id) {

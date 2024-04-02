@@ -358,8 +358,6 @@ const Project_Scheduler = () => {
             return invalidInput(res, 'Sch_Project_Id, Sch_Id, Task_Id, Task_Start_Time, Task_End_Time, Task_Est_Start_Date, Task_Est_End_Date, Task_Sch_Status, Type_Task_Id is required')
         }
 
-        console.log(Task_Est_Start_Date)
-
         try {
             const request = new sql.Request();
             request.input('Mode', 1)
@@ -399,8 +397,6 @@ const Project_Scheduler = () => {
         if (!Sch_Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !Task_Start_Time || !Task_End_Time || !Task_Sch_Duaration || !Task_Est_Start_Date || !Task_Est_End_Date || !Task_Sch_Status || !Type_Task_Id) {
             return invalidInput(res, 'Sch_Project_Id, Sch_Id, Task_Levl_Id, Task_Id, Task_Start_Time, Task_End_Time, Task_Est_Start_Date, Task_Est_End_Date, Task_Sch_Status, Type_Task_Id is required')
         }
-
-        console.log(Task_Est_Start_Date)
 
         try {
             const request = new sql.Request();

@@ -363,7 +363,6 @@ const workController = () => {
             }
 
             query += ` ORDER BY wm.Start_Time`;
-            console.log(query)
 
             const result = await sql.query(query);
 

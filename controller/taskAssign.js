@@ -41,7 +41,6 @@ const TaskAssignControl = () => {
 
     const getEmployeeTasks = async (req, res) => {
         const { Emp_Id, reqDate } = req.query;
-        console.log(req.query)
 
         if (!Emp_Id) {
             return invalidInput(res, 'Emp_Id is required');
@@ -194,7 +193,6 @@ const TaskAssignControl = () => {
             AN_No, Project_Id, Sch_Id, Task_Levl_Id, Task_Id, Assigned_Emp_Id, Emp_Id, Task_Assign_dt, Sch_Period, Sch_Time,
             EN_Time, Est_Start_Dt, Est_End_Dt, Ord_By, Timer_Based, Invovled_Stat
         } = req.body;
-        console.log(req.body)
 
         if (!AN_No || !Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !Assigned_Emp_Id || !Emp_Id || !Sch_Period || !Sch_Time
             || !EN_Time || !Est_Start_Dt || !Est_End_Dt) {

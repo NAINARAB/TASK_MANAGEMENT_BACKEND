@@ -83,7 +83,6 @@ const taskTypeControlelr = () => {
 
   const editTaskType = async (req, res) => {
     const { Task_Type_Id, Task_Type } = req.body;
-    console.log(req.body)
 
     if (!Task_Type_Id || !Task_Type) {
       return res.status(400).json({ success: false, message: 'Task_Type_Id, Task_Type is required', data: [] });
