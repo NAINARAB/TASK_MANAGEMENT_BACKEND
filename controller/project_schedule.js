@@ -48,154 +48,182 @@ const Project_Scheduler = () => {
             	s.Update_Date,
 
             	ISNULL(
-            		(
-            			SELECT 
-            				pst.A_Id,
-            				pst.Task_Levl_Id,
-            				pst.Task_Id,
-            				pst.Type_Task_Id,
-            				pst.Task_Sch_Duaration,
-            				pst.Task_Start_Time,
-            				pst.Task_End_Time,
-            				pst.Task_Est_Start_Date,
-            				pst.Task_Est_End_Date,
-            				pst.Task_Sch_Status,
+                    (
+                        SELECT 
+                            tty.Task_Type_Id,
+                            tty.Task_Type,
+            
+                            ISNULL(
+                                (
+                                    SELECT 
+                                        pst.A_Id,
+                                        pst.Task_Levl_Id,
+                                        pst.Task_Id,
+                                        pst.Type_Task_Id,
+                                        pst.Task_Sch_Duaration,
+                                        pst.Task_Start_Time,
+                                        pst.Task_End_Time,
+                                        pst.Task_Est_Start_Date,
+                                        pst.Task_Est_End_Date,
+                                        pst.Task_Sch_Status,
+            
+                                        (SELECT Task_Name FROM tbl_Task WHERE Task_Id = pst.Task_Id) AS TaskNameGet,
+            
+                                        (SELECT Task_Type FROM tbl_Task_Type WHERE Task_Type_Id = pst.Type_Task_Id) AS TaskTypeGet,
+            
+                                        (SELECT Status FROM tbl_Status WHERE Status_Id = pst.Task_Sch_Status) AS TaskSchStatusGet
                     
-            				(SELECT Task_Name FROM tbl_Task WHERE Task_Id = pst.Task_Id) AS TaskNameGet,
-                    
-            				(SELECT Task_Type FROM tbl_Task_Type WHERE Task_Type_Id = pst.Type_Task_Id) AS TaskTypeGet,
-                    
-            				(SELECT Status FROM tbl_Status WHERE Status_Id = pst.Task_Sch_Status) AS TaskSchStatusGet
-                    
-            			FROM 
-            				tbl_Project_Sch_Task_DT AS pst
-            			WHERE 
-            				pst.Sch_Id = s.Sch_Id
-            				AND 
-            				pst.Levl_Id = 1
-            				AND 
-            				pst.Task_Sch_Del_Flag = 0
-						ORDER BY
-							pst.Task_Est_Start_Date
-            			FOR JSON PATH
-            		), '[]'
-            	) AS LevelOneTasks,
+                                    FROM 
+                                        tbl_Project_Sch_Task_DT AS pst
+                                    JOIN
+                                        tbl_Task AS tsk
+                                        ON tsk.Task_Id = pst.Task_Id
+                                    WHERE 
+                                        pst.Sch_Id = s.Sch_Id
+                                        AND 
+                                        pst.Levl_Id = 1
+                                        AND 
+                                        pst.Task_Sch_Del_Flag = 0
+                                        AND
+                                        tsk.Task_Group_Id = tty.Task_Type_Id
+            
+                                    ORDER BY
+                                        pst.Task_Est_Start_Date
+                                    FOR JSON PATH
+                                )
+                                ,'[]'
+                            ) AS TaskGroup
+                        FROM 
+                            tbl_Task_Type AS tty
+                        FOR JSON PATH
+                    ), '[]'
+                ) AS LevelOneTasks,
                     
             	ISNULL(
-            		(
-            			SELECT 
-            				pst.A_Id,
-            				pst.Task_Levl_Id,
-            				pst.Task_Id,
-            				pst.Type_Task_Id,
-            				pst.Task_Sch_Duaration,
-            				pst.Task_Start_Time,
-            				pst.Task_End_Time,
-            				pst.Task_Est_Start_Date,
-            				pst.Task_Est_End_Date,
-            				pst.Task_Sch_Status,
-                    
-            				(SELECT Task_Name FROM tbl_Task WHERE Task_Id = pst.Task_Id) AS TaskNameGet,
-                    
-            				(SELECT Task_Type FROM tbl_Task_Type WHERE Task_Type_Id = pst.Type_Task_Id) AS TaskTypeGet,
-                    
-            				(SELECT Status FROM tbl_Status WHERE Status_Id = pst.Task_Sch_Status) AS TaskSchStatusGet,
-                    
-            				ISNULL(
-            					(
-            						SELECT
-            							psdt.A_Id,
-            							psdt.Task_Levl_Id,
-            							psdt.Task_Depend_Level_Id,
-                                
-            							(SELECT 
-            								(SELECT Task_Name FROM tbl_Task WHERE Task_Id = tpstdt.Task_Id) AS TaskNameGet 
-            							FROM 
-            								tbl_Project_Sch_Task_DT AS tpstdt
-            							WHERE 
-            								tpstdt.Task_Levl_Id = psdt.Task_Depend_Level_Id
-            							) AS TaskNameGet
-                                        
-                                        
-            						FROM 
-            							tbl_Project_Sch_Task_Depend_DT AS psdt
-            						WHERE psdt.Task_Levl_Id = pst.Task_Levl_Id
-            						FOR JSON PATH
-            					), '[]'
-            				) AS DependancyTasks
-                                        
-                                        
-            			FROM 
-            				tbl_Project_Sch_Task_DT AS pst
-            			WHERE 
-            				pst.Sch_Id = s.Sch_Id
-            				AND 
-            				pst.Levl_Id = 2
-            				AND 
-            				pst.Task_Sch_Del_Flag = 0
-						ORDER BY
-							pst.Task_Est_Start_Date
-            			FOR JSON PATH
-            		), '[]'
-            	) AS LevelTwoTasks,
-                                                            
-            	ISNULL(
-            		(
-            			SELECT 
-            				pst.A_Id,
-            				pst.Task_Levl_Id,
-            				pst.Task_Id,
-            				pst.Type_Task_Id,
-            				pst.Task_Sch_Duaration,
-            				pst.Task_Start_Time,
-            				pst.Task_End_Time,
-            				pst.Task_Est_Start_Date,
-            				pst.Task_Est_End_Date,
-            				pst.Task_Sch_Status,
-                    
-            				(SELECT Task_Name FROM tbl_Task WHERE Task_Id = pst.Task_Id) AS TaskNameGet,
-                    
-            				(SELECT Task_Type FROM tbl_Task_Type WHERE Task_Type_Id = pst.Type_Task_Id) AS TaskTypeGet,
-                    
-            				(SELECT Status FROM tbl_Status WHERE Status_Id = pst.Task_Sch_Status) AS TaskSchStatusGet,
-                    
-            				ISNULL(
-            					(
-            						SELECT
-            							psdt.A_Id,
-            							psdt.Task_Levl_Id,
-            							psdt.Task_Depend_Level_Id,
-                                
-            							(SELECT 
-            								(SELECT Task_Name FROM tbl_Task WHERE Task_Id = tpstdt.Task_Id) AS TaskNameGet 
-            							FROM 
-            								tbl_Project_Sch_Task_DT AS tpstdt
-            							WHERE 
-            								tpstdt.Task_Levl_Id = psdt.Task_Depend_Level_Id
-            							) AS TaskNameGet
-                                        
-                                        
-            						FROM 
-            							tbl_Project_Sch_Task_Depend_DT AS psdt
-            						WHERE psdt.Task_Levl_Id = pst.Task_Levl_Id
-            						FOR JSON PATH
-            					), '[]'
-            				) AS DependancyTasks
-                                        
-                                        
-            			FROM 
-            				tbl_Project_Sch_Task_DT AS pst
-            			WHERE 
-            				pst.Sch_Id = s.Sch_Id
-            				AND 
-            				pst.Levl_Id = 3
-            				AND 
-            				pst.Task_Sch_Del_Flag = 0
-						ORDER BY
-							pst.Task_Est_Start_Date
-            			FOR JSON PATH
-            		), '[]'
-            	) AS LevelThreeTasks
+                    (
+                        SELECT 
+                            tty.Task_Type_Id,
+                            tty.Task_Type,
+            
+                            ISNULL(
+                                (
+                                    SELECT 
+                                        pst.A_Id,
+                                        pst.Task_Levl_Id,
+                                        pst.Task_Id,
+                                        pst.Type_Task_Id,
+                                        pst.Task_Sch_Duaration,
+                                        pst.Task_Start_Time,
+                                        pst.Task_End_Time,
+                                        pst.Task_Est_Start_Date,
+                                        pst.Task_Est_End_Date,
+                                        pst.Task_Sch_Status,
+            
+                                        (SELECT Task_Name FROM tbl_Task WHERE Task_Id = pst.Task_Id) AS TaskNameGet,
+            
+                                        (SELECT Task_Type FROM tbl_Task_Type WHERE Task_Type_Id = pst.Type_Task_Id) AS TaskTypeGet,
+            
+                                        (SELECT Status FROM tbl_Status WHERE Status_Id = pst.Task_Sch_Status) AS TaskSchStatusGet,
+            
+                                        ISNULL(
+                                            (
+                                                SELECT
+                                                    psdt.A_Id,
+                                                    psdt.Task_Levl_Id,
+                                                    psdt.Task_Depend_Level_Id,
+                                                    (SELECT Task_Name FROM tbl_Task WHERE Task_Id = tpstdt.Task_Id) AS TaskNameGet 
+                                                FROM tbl_Project_Sch_Task_Depend_DT AS psdt
+                                                JOIN tbl_Project_Sch_Task_DT AS tpstdt ON tpstdt.Task_Levl_Id = psdt.Task_Depend_Level_Id
+                                                WHERE psdt.Task_Levl_Id = pst.Task_Levl_Id
+                                                FOR JSON PATH
+                                            ), '[]'
+                                        ) AS DependancyTasks
+                                                    
+                                    FROM 
+                                        tbl_Project_Sch_Task_DT AS pst
+                                        JOIN tbl_Task AS tsk ON tsk.Task_Id = pst.Task_Id
+                                    WHERE 
+                                        pst.Sch_Id = s.Sch_Id
+                                        AND 
+                                        pst.Levl_Id = 2
+                                        AND 
+                                        pst.Task_Sch_Del_Flag = 0
+                                        AND
+                                        tsk.Task_Group_Id = tty.Task_Type_Id
+                                    ORDER BY
+                                        pst.Task_Est_Start_Date
+                                    FOR JSON PATH
+                                )
+                                ,'[]'
+                            ) AS TaskGroup
+                        FROM 
+                            tbl_Task_Type AS tty
+                        FOR JSON PATH
+                    ), '[]'
+                ) AS LevelTwoTasks,
+                
+                ISNULL(
+                    (
+                        SELECT 
+                            tty.Task_Type_Id,
+                            tty.Task_Type,
+            
+                            ISNULL(
+                                (
+                                    SELECT 
+                                        pst.A_Id,
+                                        pst.Task_Levl_Id,
+                                        pst.Task_Id,
+                                        pst.Type_Task_Id,
+                                        pst.Task_Sch_Duaration,
+                                        pst.Task_Start_Time,
+                                        pst.Task_End_Time,
+                                        pst.Task_Est_Start_Date,
+                                        pst.Task_Est_End_Date,
+                                        pst.Task_Sch_Status,
+            
+                                        (SELECT Task_Name FROM tbl_Task WHERE Task_Id = pst.Task_Id) AS TaskNameGet,
+            
+                                        (SELECT Task_Type FROM tbl_Task_Type WHERE Task_Type_Id = pst.Type_Task_Id) AS TaskTypeGet,
+            
+                                        (SELECT Status FROM tbl_Status WHERE Status_Id = pst.Task_Sch_Status) AS TaskSchStatusGet,
+            
+                                        ISNULL(
+                                            (
+                                                SELECT
+                                                    psdt.A_Id,
+                                                    psdt.Task_Levl_Id,
+                                                    psdt.Task_Depend_Level_Id,
+                                                    (SELECT Task_Name FROM tbl_Task WHERE Task_Id = tpstdt.Task_Id) AS TaskNameGet 
+                                                FROM tbl_Project_Sch_Task_Depend_DT AS psdt
+                                                JOIN tbl_Project_Sch_Task_DT AS tpstdt ON tpstdt.Task_Levl_Id = psdt.Task_Depend_Level_Id
+                                                WHERE psdt.Task_Levl_Id = pst.Task_Levl_Id
+                                                FOR JSON PATH
+                                            ), '[]'
+                                        ) AS DependancyTasks
+                                                    
+                                    FROM 
+                                        tbl_Project_Sch_Task_DT AS pst
+                                        JOIN tbl_Task AS tsk ON tsk.Task_Id = pst.Task_Id
+                                    WHERE 
+                                        pst.Sch_Id = s.Sch_Id
+                                        AND 
+                                        pst.Levl_Id = 3
+                                        AND 
+                                        pst.Task_Sch_Del_Flag = 0
+                                        AND
+                                        tsk.Task_Group_Id = tty.Task_Type_Id
+                                    ORDER BY
+                                        pst.Task_Est_Start_Date
+                                    FOR JSON PATH
+                                )
+                                ,'[]'
+                            ) AS TaskGroup
+                        FROM 
+                            tbl_Task_Type AS tty
+                        FOR JSON PATH
+                    ), '[]'
+                ) AS LevelThreeTasks
                                                    
             FROM 
             	tbl_Project_Schedule AS s

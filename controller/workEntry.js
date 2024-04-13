@@ -273,7 +273,7 @@ const workController = () => {
 
         try {
             const query = `
-            SELECT
+                SELECT
                     wm.*,
                     p.Project_Name,
                     t.Task_Name,

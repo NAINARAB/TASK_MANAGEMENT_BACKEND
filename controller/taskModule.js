@@ -38,10 +38,10 @@ const taskModule = () => {
   }
 
   const createTask = async (req, res) => {
-    const { Task_Name, Task_Desc, Under_Task_Id, Entry_By } = req.body;
+    const { Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By } = req.body;
 
-    if (!Task_Name || !Task_Desc || isNaN(Number(Under_Task_Id)) || !Entry_By) {
-      return invalidInput(res, 'Task_Name, Task_Desc, Under_Task_Id, Entry_By is required')
+    if (!Task_Name || !Task_Desc || isNaN(Number(Under_Task_Id)) || isNaN(Task_Group_Id) || !Entry_By) {
+      return invalidInput(res, 'Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By is required')
     }
 
     try {
@@ -54,6 +54,7 @@ const taskModule = () => {
       request.input('Under_Task_Id', Under_Task_Id)
       request.input('Entry_By', Entry_By);
       request.input('Entry_Date', new Date());
+      request.input('Task_Group_Id', Task_Group_Id)
 
       const result = await request.execute('Task_SP');
 
@@ -69,10 +70,10 @@ const taskModule = () => {
   };
 
   const editTask = async (req, res) => {
-    const { Task_Id, Task_Name, Task_Desc, Under_Task_Id, Entry_By } = req.body;
+    const { Task_Id, Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By } = req.body;
 
-    if ( !Task_Id || !Task_Name || !Task_Desc || isNaN(Number(Under_Task_Id)) || !Entry_By) {
-      return invalidInput(res, 'Task_Name, Task_Desc, Under_Task_Id, Entry_By is required')
+    if ( isNaN(Task_Id) || !Task_Name || !Task_Desc || isNaN(Under_Task_Id) || isNaN(Task_Group_Id) || isNaN(Entry_By) ) {
+      return invalidInput(res, 'Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By is required')
     }
 
     try {
@@ -85,6 +86,7 @@ const taskModule = () => {
       request.input('Under_Task_Id', Under_Task_Id)
       request.input('Entry_By', Entry_By);
       request.input('Entry_Date', new Date());
+      request.input('Task_Group_Id', Task_Group_Id)
 
       const result = await request.execute('Task_SP');
 
