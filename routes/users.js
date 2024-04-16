@@ -145,8 +145,13 @@ router.delete('/project/schedule/scheduleTask', Project_Scheduler.deleteTaskInSc
 router.get('/todayTasks', TaskAssignControl.todayTasks)
 router.get('/task/myTasks', TaskAssignControl.getEmployeeTasks)
 
+//reports
 router.get('/task/workDone', workController.getAllWorkedDataOfEmp)
 router.get('/workReport', workController.getAllWorkedData)
+router.get('/getGroupedTaskReport', workController.getAllGroupedWorkedData);
+router.get('/taskActivityReport', workController.taskWorkDetailsPieChart)
+router.get('/taskActivityReportBarChart', workController.taskWorkDetailsBarChart)
+
 
 router.get('/task/assignEmployee', TaskAssignControl.getAssignedEmployeeForTask)
 router.post('/task/assignEmployee', TaskAssignControl.assignTaskForEmployee)

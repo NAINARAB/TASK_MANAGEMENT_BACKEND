@@ -6,7 +6,7 @@ const taskModule = () => {
 
   const getTaskDropDown = async (req, res) => {
     try {
-      const getQuery = `SELECT Task_Id, Task_Name FROM tbl_Task`
+      const getQuery = `SELECT Task_Id, Task_Name FROM tbl_Task ORDER BY Task_Name`
 
       const request = new sql.Request()
       const result = await request.query(getQuery)

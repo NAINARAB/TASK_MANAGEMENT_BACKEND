@@ -22,12 +22,18 @@ const resFun = () => {
         return res.status(400).json({ data: [], success: false, message: message || 'Invalid request' })
       }
 
+      function isValidDate(dateString) {
+        const timestamp = Date.parse(dateString);
+        return !isNaN(timestamp);
+      }
+
       return {
         dataFound,
         noData,
         falied,
         servError,
-        invalidInput
+        invalidInput,
+        isValidDate
       }
 }
 

@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { dataFound, noData, falied, servError, invalidInput } = require('../controller/res');
+const { dataFound, noData, falied, servError, invalidInput, isValidDate } = require('../controller/res');
 
 const workController = () => {
 
@@ -92,7 +92,7 @@ const workController = () => {
     const getEmployeeWorkedTask = async (req, res) => {
         const { Emp_Id, reqDate } = req.query;
 
-        if (!Emp_Id) {
+        if (isNaN(Emp_Id)) {
             return invalidInput(res, 'Emp_Id is required')
         }
 
@@ -376,6 +376,226 @@ const workController = () => {
         }
     };
 
+    const getAllGroupedWorkedData = async (req, res) => {
+        const { Emp_Id, Project_Id, Task_Id, from, to } = req.query;
+        try {
+            // let query = `
+            //     SELECT
+            //         wm.*,
+            //         p.Project_Name,
+            //         t.Task_Name,
+            //         u.Name AS EmployeeName,
+            //         s.Status AS WorkStatus,
+            //         COALESCE(
+            //             (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
+            //             0
+            //         ) AS Timer_Based
+            //     FROM 
+            //         tbl_Work_Master AS wm
+            //     LEFT JOIN
+            //         tbl_Project_Master AS p ON p.Project_Id = wm.Project_Id
+            //     LEFT JOIN 
+            //         tbl_Task AS t ON t.Task_Id = wm.Task_Id
+            //     LEFT JOIN
+            //         tbl_Users AS u ON u.UserId = wm.Emp_Id
+            //     LEFT JOIN
+            //         tbl_Status AS s ON s.Status_Id = wm.Work_Status
+            //     LEFT JOIN
+            //         tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
+            //     WHERE 
+            //         (wm.AN_No = td.AN_No OR wm.AN_No = 0)`;
+
+            let query = `
+            SELECT 
+            	tty.Task_Type_Id,
+            	tty.Task_Type,
+                    
+            	COALESCE(
+            		(
+            			SELECT
+            				wm.*,
+                            p.Project_Name,
+                            t.Task_Name,
+                            u.Name AS EmployeeName,
+                            s.Status AS WorkStatus,
+                            COALESCE(
+            					(
+            						SELECT 
+            							Timer_Based 
+            						FROM 
+            							tbl_Task_Details 
+            						WHERE 
+            							AN_No = wm.AN_No
+            					), 0
+            				) AS Timer_Based
+                        
+            			FROM 
+            				tbl_Work_Master AS wm
+                        
+            			LEFT JOIN
+                                tbl_Project_Master AS p ON p.Project_Id = wm.Project_Id
+            			LEFT JOIN 
+                                tbl_Task AS t ON t.Task_Id = wm.Task_Id
+            			LEFT JOIN
+                                tbl_Users AS u ON u.UserId = wm.Emp_Id
+            			LEFT JOIN
+                                tbl_Status AS s ON s.Status_Id = wm.Work_Status
+            			LEFT JOIN
+                                tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
+                        
+                        WHERE 
+                            (wm.AN_No = td.AN_No OR wm.AN_No = 0)
+            			AND
+            				t.Task_Group_Id = tty.Task_Type_Id
+            `
+
+            if (Emp_Id) {
+                query += ` 
+                AND wm.Emp_Id = '${Emp_Id}'`;
+            }
+            if (Boolean(Number(Project_Id))) {
+                query += ` 
+                AND wm.Project_Id = '${Project_Id}'`;
+            }
+            if (Boolean(Number(Task_Id))) {
+                query += ` 
+                AND wm.Task_Id = '${Task_Id}'`;
+            }
+            if (from && to) {
+                query += ` 
+                AND 
+                    CONVERT(DATE, Work_Dt) >= CONVERT(DATE, '${from}')
+                AND 
+                    CONVERT(DATE, Work_Dt) <= CONVERT(DATE, '${to}')`;
+            }
+
+            query += `
+                        ORDER BY wm.Start_Time
+                        FOR JSON PATH
+            		), '[]'
+            	) AS TASK_GROUP
+            
+            FROM 
+            	tbl_Task_Type AS tty`;
+
+            console.log(query)
+            const result = await sql.query(query);
+
+            if (result.recordset.length > 0) {
+                const parsedResponse = result.recordset.map(o => ({
+                    ...o,
+                    TASK_GROUP: JSON.parse(o?.TASK_GROUP)
+                }))
+                dataFound(res, parsedResponse);
+            } else {
+                noData(res);
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    };
+
+    const taskWorkDetailsPieChart = async (req, res) => {
+        const { Emp_Id, reqDate } = req.query;
+
+        try {
+            const query = `
+            SELECT 
+                CONVERT(DATE, wm.Work_Dt) AS Work_Date,
+                t.Task_Name,
+                emp.Name AS Employee_Name,
+                SUM(DATEDIFF(MINUTE, wm.Start_Time, wm.End_Time)) AS Total_Worked_Minutes
+            FROM
+                tbl_Work_Master AS wm
+            LEFT JOIN
+                tbl_Task AS t ON t.Task_Id = wm.Task_Id
+            LEFT JOIN
+                tbl_Users AS emp ON emp.UserId = wm.Emp_Id
+            WHERE
+                t.Task_Id != 2
+            `;
+
+            if (Number(Emp_Id)) {
+                query += `
+                AND wm.Emp_Id = '${Emp_Id}'
+                `
+            }
+            if (reqDate) {
+                query += `
+                AND wm.Work_Dt = '${reqDate}'
+                `
+            }
+
+            query += `
+            GROUP BY
+                CONVERT(DATE, wm.Work_Dt),
+                t.Task_Name,
+                emp.Name
+            ORDER BY
+                Work_Date
+            `
+
+            const request = new sql.Request();
+            const result = await request.query(query);
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
+    const taskWorkDetailsBarChart = async (req, res) => { 
+        const { Emp_Id, Task_Id, From, To } = req.query;
+
+        if (isNaN(Task_Id) || !isValidDate(From) || !isValidDate(To)) {
+            return invalidInput(res, 'Task_Id, From, To is required, Emp_Id is optional')
+        }
+
+        try {
+            let query = `
+            SELECT 
+                CONVERT(DATE, wm.Work_Dt) AS Work_Dt,
+                t.Task_Id,
+                t.Task_Name,
+                wm.Emp_Id,
+                emp.Name AS Employee_Name,
+                wm.Start_Time,
+                wm.End_Time,
+                DATEDIFF(MINUTE, wm.Start_Time, wm.End_Time) AS Worked_Minutes 
+            FROM
+                tbl_Work_Master AS wm
+                LEFT JOIN tbl_Task AS t 
+                ON t.Task_Id = wm.Task_Id
+                LEFT JOIN tbl_Users AS emp 
+                ON emp.UserId = wm.Emp_Id
+            WHERE
+                t.Task_Id = '${Task_Id}'
+                AND	CONVERT(DATE, wm.Work_Dt) >= CONVERT(DATE, '${From}')
+                AND	CONVERT(DATE, wm.Work_Dt) <= CONVERT(DATE, '${To}')
+            `;
+
+            if (Number(Emp_Id)) {
+                query +=`AND wm.Emp_Id = '${Emp_Id}'`
+            }
+            query += `ORDER BY CONVERT(DATE, wm.Work_Dt)`;
+
+            const request = new sql.Request()
+            const result = await request.query(query);
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
 
 
     return {
@@ -385,7 +605,10 @@ const workController = () => {
         getEmployeeWorkedTask,
         postWorkedTask,
         getAllWorkedDataOfEmp,
-        getAllWorkedData
+        getAllWorkedData,
+        getAllGroupedWorkedData,
+        taskWorkDetailsPieChart,
+        taskWorkDetailsBarChart
     }
 }
 
