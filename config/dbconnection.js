@@ -1,4 +1,5 @@
 const sql = require("mssql");
+require('dotenv').config();
 
 // const config = {
 //   server: "103.235.104.114",
@@ -14,11 +15,11 @@ const sql = require("mssql");
 // };
 
 const config = {
-  server: "103.14.120.9",
-  database: "SMT_Task_Online_New",
+  server: process.env.SERVER,
+  database: process.env.DATABASE,
   driver: "SQL Server",
-  user: "SMT_ADMIN",
-  password: "yvKj3699^",
+  user: process.env.USER,
+  password: process.env.PASSWORD,
   stream: false,
   options: {
     trustedConnection: true,
