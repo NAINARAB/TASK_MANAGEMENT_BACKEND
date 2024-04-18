@@ -188,7 +188,30 @@ const workController = () => {
                 COALESCE(
                     (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
                     0
-                ) AS Timer_Based
+                ) AS Timer_Based,
+
+                COALESCE(
+                    (
+                        SELECT
+                            tp.*,
+                            wpm.Current_Value,
+                            pm.Paramet_Name,
+                            pm.Paramet_Data_Type
+                        FROM 
+                            tbl_Task_Paramet_DT AS tp
+                                
+                            LEFT JOIN tbl_Paramet_Master AS pm 
+                            ON pm.Paramet_Id = tp.Param_Id
+
+                            LEFT JOIN tbl_Work_Paramet_DT AS wpm 
+                            ON wpm.Work_Id = wm.Work_Id
+                        WHERE
+                            tp.Task_Id = wm.Task_Id
+                            AND
+                            tp.Param_Id = wpm.Param_Id
+                        FOR JSON PATH
+                    ), '[]'
+                ) AS Param_Dts                
                 
             FROM 
                 tbl_Work_Master AS wm
@@ -205,7 +228,7 @@ const workController = () => {
                 
             WHERE 
                 wm.Emp_Id = '${Emp_Id}'
-                AND CONVERT(DATE, wm.Work_DT) = CONVERT(DATE, '${reqDate ? reqDate : new Date()}')
+                AND CONVERT(DATE, wm.Work_DT) = CONVERT(DATE, '${isValidDate(reqDate) ? reqDate : new Date()}')
                 AND (wm.AN_No = td.AN_No OR wm.AN_No = 0)
                 
             ORDER BY 
@@ -213,6 +236,9 @@ const workController = () => {
             const result = await sql.query(query);
 
             if (result.recordset.length > 0) {
+                result.recordset.map(o => {
+                    o.Param_Dts = JSON.parse(o?.Param_Dts)
+                })
                 dataFound(res, result.recordset)
             } else {
                 noData(res)
