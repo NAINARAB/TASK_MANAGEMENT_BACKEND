@@ -71,6 +71,9 @@ const TaskAssignControl = () => {
             const result = await request.execute('Task_Search_By_Online_Emp_Id');
 
             if (result.recordset) {
+                result.recordset.map(o => {
+                    o.Param_Dts = JSON.parse(o?.Param_Dts)
+                })
                 dataFound(res, result.recordset)
             } else {
                 noData(res)

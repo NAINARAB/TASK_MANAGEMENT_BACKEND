@@ -16,6 +16,7 @@ const Project_Scheduler = require('../controller/project_schedule')
 const TaskAssignControl = require('../controller/taskAssign');
 const DashboardController = require('../controller/dashboard');
 const NotificationController = require('../controller/notification');
+const TaskPrarameter = require('../controller/taskParameters')
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -48,7 +49,14 @@ router.post('/tasks', taskModule.createTask);
 router.put('/tasks', taskModule.editTask);
 router.delete('/tasks', taskModule.deleteTask);
 router.get('/myTasks', taskModule.getMyTasks);
-router.get('/tasksDropdown', taskModule.getTaskDropDown)
+router.get('/tasksDropdown', taskModule.getTaskDropDown);
+
+//task parameter
+router.get('/tasks/parameters', TaskPrarameter.getTaskParameters)
+router.post('/tasks/parameters', TaskPrarameter.addTaskPrarameter)
+router.put('/tasks/parameters', TaskPrarameter.editTaskPrarameter)
+router.delete('/tasks/parameters', TaskPrarameter.delTaskParameter)
+
 
 router.get('/startTask', workController.getTaskStartTime);
 router.post('/startTask', workController.postStartTime);

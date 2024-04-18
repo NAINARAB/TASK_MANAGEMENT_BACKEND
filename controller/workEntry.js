@@ -223,7 +223,7 @@ const workController = () => {
     }
 
     const postWorkedTask = async (req, res) => {
-        const { Mode, Work_Id, Project_Id, Sch_Id, Task_Levl_Id, Task_Id, AN_No, Emp_Id, Work_Dt, Work_Done, Start_Time, End_Time, Work_Status } = req.body;
+        const { Mode, Work_Id, Project_Id, Sch_Id, Task_Levl_Id, Task_Id, AN_No, Emp_Id, Work_Dt, Work_Done, Start_Time, End_Time, Work_Status, Det_string } = req.body;
 
         if (!Project_Id || !Sch_Id || !Task_Levl_Id || !Task_Id || !Emp_Id || !Work_Done || !Start_Time || !End_Time || !Work_Status) {
             return invalidInput(res, 'Project_Id, Sch_Id, Task_Levl_Id, Task_Id, Emp_Id, Work_Done, Start_Time, End_Time, Work_Status is required')
@@ -250,6 +250,7 @@ const workController = () => {
             request.input('Work_Status', Work_Status)
             request.input('Entry_By', Emp_Id)
             request.input('Entry_Date', new Date());
+            request.input('Det_string', Det_string);
 
             const result = await request.execute('Work_SP')
             if (result.rowsAffected && result.rowsAffected[0] > 0) {

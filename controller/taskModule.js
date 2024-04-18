@@ -24,11 +24,51 @@ const taskModule = () => {
   const getTasks = async (req, res) => {
 
     try {
-      const request = new sql.Request()
+      const result = await sql.query(`
+      SELECT 
+	      t.*,
+	      COALESCE(ut.Task_Name, 'PRIMARY TASK') AS Under_Task, 
+	      COALESCE(tty.Task_Type, 'Undefined') AS Task_Group,
+	
+	      COALESCE(
+	      	(
+	      			SELECT 
+                param.PA_Id,
+                param.Task_Id,
+                param.Param_Id AS Paramet_Id,
+                param.Default_Value,
+                pm.Paramet_Name,
+                pm.Paramet_Data_Type
+	      			FROM
+	      				tbl_Task_Paramet_DT AS param
+                LEFT JOIN tbl_Paramet_Master AS pm
+                ON pm.Paramet_Id = param.Param_Id
+	      			WHERE
+	      				Task_Id = t.Task_Id
+	      			FOR JSON PATH
+	      	), '[]'
+	      ) AS Det_string
 
-      const result = await request.execute('Task_Search_Online');
+      FROM tbl_Task AS t
+	
+	      LEFT JOIN tbl_Task AS ut
+	      ON t.Under_Task_Id = t.Task_Id
+
+	      LEFT JOIN tbl_Users AS u
+	      ON u.UserId = t.Entry_By
+
+	      LEFT JOIN tbl_Task_Type AS tty
+	      ON tty.Task_Type_Id = t.Task_Group_Id
+
+      ORDER BY 
+        CONVERT(DATE, t.Entry_Date) DESC`)
+
       if (result.recordset.length > 0) {
-        return dataFound(res, result.recordset)
+        const parsed = result.recordset.map(o => ({
+          ...o,
+          Det_string: JSON.parse(o?.Det_string)
+        }))
+        return dataFound(res, parsed)
       } else {
         return noData(res)
       }
@@ -38,9 +78,9 @@ const taskModule = () => {
   }
 
   const createTask = async (req, res) => {
-    const { Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By } = req.body;
+    const { Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By, Det_string } = req.body;
 
-    if (!Task_Name || !Task_Desc || isNaN(Number(Under_Task_Id)) || isNaN(Task_Group_Id) || !Entry_By) {
+    if (!Task_Name || !Task_Desc || isNaN(Under_Task_Id) || isNaN(Task_Group_Id) || !Entry_By) {
       return invalidInput(res, 'Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By is required')
     }
 
@@ -54,11 +94,14 @@ const taskModule = () => {
       request.input('Under_Task_Id', Under_Task_Id)
       request.input('Entry_By', Entry_By);
       request.input('Entry_Date', new Date());
-      request.input('Task_Group_Id', Task_Group_Id)
+      request.input('Task_Group_Id', Task_Group_Id);
+      request.input('Det_string', Det_string || '')
 
       const result = await request.execute('Task_SP');
+      console.log(result);
 
-      if (result.rowsAffected.length > 0) {
+      if (result.rowsAffected.length > 0 && result.recordset[0].Task_Id) {
+
         return dataFound(res, [], 'Task Created');
       } else {
         return res.status(400).json({ data: [], message: 'Failed to create Task', success: false })
@@ -70,9 +113,9 @@ const taskModule = () => {
   };
 
   const editTask = async (req, res) => {
-    const { Task_Id, Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By } = req.body;
+    const { Task_Id, Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By, Det_string } = req.body;
 
-    if ( isNaN(Task_Id) || !Task_Name || !Task_Desc || isNaN(Under_Task_Id) || isNaN(Task_Group_Id) || isNaN(Entry_By) ) {
+    if (isNaN(Task_Id) || !Task_Name || !Task_Desc || isNaN(Under_Task_Id) || isNaN(Task_Group_Id) || isNaN(Entry_By)) {
       return invalidInput(res, 'Task_Name, Task_Desc, Under_Task_Id, Task_Group_Id, Entry_By is required')
     }
 
@@ -87,6 +130,7 @@ const taskModule = () => {
       request.input('Entry_By', Entry_By);
       request.input('Entry_Date', new Date());
       request.input('Task_Group_Id', Task_Group_Id)
+      request.input('Det_string', Det_string || '')
 
       const result = await request.execute('Task_SP');
 
@@ -134,7 +178,7 @@ const taskModule = () => {
 
   // oldCode
 
-  
+
   const assignEmployeeForTask = async (req, res) => {
     const { Task_Id, Sub_Task_Id, Emp_Id, Task_Assign_dt, Prity, Sch_Time, EN_Time, Ord_By, Timer_Based, Assigned_Emp_Id } = req.body;
 
