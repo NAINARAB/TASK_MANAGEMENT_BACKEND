@@ -51,6 +51,10 @@ router.delete('/tasks', taskModule.deleteTask);
 router.get('/myTasks', taskModule.getMyTasks);
 router.get('/tasksDropdown', taskModule.getTaskDropDown);
 
+router.get('/taskAssignedUsersDropdown', taskModule.getTaskAssignedUsers)
+router.get('/assignedTasksDropdown', taskModule.getAssignedTasks)
+router.get('/userFilter/taskBased',taskModule.getFilteredUsersBasedOnTasks)
+
 //task parameter
 router.get('/tasks/parameters', TaskPrarameter.getTaskParameters)
 router.post('/tasks/parameters', TaskPrarameter.addTaskPrarameter)
@@ -65,14 +69,9 @@ router.delete('/startTask', workController.deleteTaskTime);
 router.post('/saveWork', workController.postWorkedTask);
 router.get('/myTodayWorks', workController.getEmployeeWorkedTask)
 
-// router.post('/assignEmployee', taskModule.assignEmployeeForTask);
-// router.put('/assignEmployee', taskModule.editAssignEmployeeForTask);
-// router.delete('/assignEmployee', taskModule.deleteAssignEmployeeForTask);
-
 router.get('/taskStatus', usercontroller.getTaskStatus);
 
 router.get('/getPagePermission', usercontroller.getPermission);
-router.post('/updateAssignedEmployee', taskModule.removeAssignedEmp);
 
 router.get('/company', companyControl.getCompany);
 router.post('/company', companyControl.postCompany);

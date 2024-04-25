@@ -88,7 +88,6 @@ const workController = () => {
         }
     }
 
-
     const getEmployeeWorkedTask = async (req, res) => {
         const { Emp_Id, reqDate } = req.query;
 
@@ -292,14 +291,14 @@ const workController = () => {
     }
 
     const getAllWorkedDataOfEmp = async (req, res) => {
-        const { Emp_Id } = req.query;
+        const { Emp_Id, Start, End } = req.query;
 
         if (!Emp_Id) {
             return invalidInput(res, 'Emp_Id is required')
         }
 
         try {
-            const query = `
+            let query = `
                 SELECT
                     wm.*,
                     p.Project_Name,
@@ -309,7 +308,24 @@ const workController = () => {
                     COALESCE(
                         (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
                         0
-                    ) AS Timer_Based
+                    ) AS Timer_Based,
+
+					COALESCE((
+						SELECT 
+							wp.Current_Value,
+							wp.Default_Value,
+							wp.Param_Id,
+							pm.Paramet_Name,
+                            pm.Paramet_Data_Type
+						FROM
+							tbl_Work_Paramet_DT as wp
+							LEFT JOIN tbl_Paramet_Master AS pm
+							ON pm.Paramet_Id = wp.Param_Id
+						WHERE 
+							Work_Id = wm.Work_Id
+						FOR JSON PATH
+					), '[]') AS Parameter_Details
+
                 FROM 
                     tbl_Work_Master AS wm
                 LEFT JOIN
@@ -324,15 +340,25 @@ const workController = () => {
                     tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
                 WHERE 
                     (wm.AN_No = td.AN_No OR wm.AN_No = 0)
+                    AND
+                    wm.Emp_Id = '${Emp_Id}'`;
+
+            if (Start && End) {
+                query += `
                 AND
-                wm.Emp_Id = '${Emp_Id}'
-            ORDER BY 
-				wm.Start_Time`;
+                CONVERT(DATE, wm.Work_Dt) >= CONVERT(DATE, '${Start}')
+                AND
+                CONVERT(DATE, wm.Work_Dt) <= CONVERT(DATE, '${End}')`
+            }
 
             const result = await sql.query(query);
 
             if (result.recordset.length > 0) {
-                dataFound(res, result.recordset)
+                const parsedResponse = result.recordset.map(o => ({
+                    ...o,
+                    Parameter_Details: JSON.parse(o?.Parameter_Details)
+                }))
+                dataFound(res, parsedResponse)
             } else {
                 noData(res)
             }
@@ -622,7 +648,6 @@ const workController = () => {
             servError(e, res);
         }
     }
-
 
 
     return {

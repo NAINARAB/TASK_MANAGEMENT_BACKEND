@@ -1,6 +1,5 @@
 const sql = require("mssql");
-const { dataFound, noData, falied, servError, invalidInput } = require('../controller/res');
-const { storecall } = require("../config/store");
+const { dataFound, noData, servError, invalidInput } = require('../controller/res');
 
 const taskModule = () => {
 
@@ -176,143 +175,6 @@ const taskModule = () => {
     }
   }
 
-  // oldCode
-
-
-  const assignEmployeeForTask = async (req, res) => {
-    const { Task_Id, Sub_Task_Id, Emp_Id, Task_Assign_dt, Prity, Sch_Time, EN_Time, Ord_By, Timer_Based, Assigned_Emp_Id } = req.body;
-
-    const requiredVariables = ['Task_Id', 'Sub_Task_Id', 'Emp_Id', 'Task_Assign_dt', 'Prity', 'Sch_Time', 'EN_Time', 'Ord_By', 'Assigned_Emp_Id'];
-
-    const missingVariables = Object.keys(req.body).filter(variable =>
-      requiredVariables.includes(variable) && !req.body[variable]
-    );
-
-    if (missingVariables.length > 0) {
-      const missingVariablesString = missingVariables.join(', ');
-      return invalidInput(res, `${missingVariablesString} is/are required`);
-    }
-
-
-    const checkEmpAlredyAssigned = `SELECT COUNT(*) AS INVOLVED FROM tbl_Task_Details WHERE Task_Id = '${Task_Id}' AND T_Sub_Task_Id = '${Sub_Task_Id}' AND Emp_Id = '${Emp_Id}'`;
-
-    try {
-      const count = await storecall(checkEmpAlredyAssigned);
-      if (Array.isArray(count) && count[0].INVOLVED > 0) {
-        return falied(res, 'Employee Already Assigned To This Task')
-      }
-
-      const request = new sql.Request();
-      request.input('Mode', 1);
-      request.input('Task_Id', Task_Id);
-      request.input('T_Sub_Task_Id', Sub_Task_Id || 0);
-      request.input('Emp_Id', Emp_Id);
-      request.input('Task_Assign_dt', Task_Assign_dt);
-      request.input('Prity', Prity);
-      request.input('Sch_Time', Sch_Time);
-      request.input('EN_Time', EN_Time);
-      request.input('Ord_By', Ord_By);
-      request.input('Timer_Based', Timer_Based || 0);
-      request.input('Assigned_Emp_Id', Assigned_Emp_Id);
-
-      const result = await request.execute('Task_Assign_SP');
-
-      if (result.rowsAffected.length > 0) {
-        dataFound(res, [], 'One Task Assigned!');
-      } else {
-        return falied(res, 'Failed to assign Task, Please try again')
-      }
-
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
-  const editAssignEmployeeForTask = async (req, res) => {
-    const { Id, Sub_Task_Id, Emp_Id, Task_Assign_dt, Prity, Sch_Time, Ord_By, Timer_Based, Assigned_Emp_Id } = req.body;
-
-    if ((!Id && !Sub_Task_Id) || !Emp_Id || !Task_Assign_dt || !Prity || !Sch_Time || !Ord_By || !Assigned_Emp_Id) {
-      return invalidInput(res, 'Id, Sub_Task_Id, Emp_Id, Task_Assign_dt, Prity, Sch_Time, Ord_By, Assigned_Emp_Id is required')
-    }
-
-    try {
-      const request = new sql.Request();
-      request.input('Mode', 2);
-      request.input('Id', Id);
-      request.input('T_Sub_Task_Id', Sub_Task_Id);
-      request.input('Emp_Id', Emp_Id);
-      request.input('Task_Assign_dt', Task_Assign_dt);
-      request.input('Prity', Prity);
-      request.input('Sch_Time', Sch_Time);
-      request.input('Ord_By', Ord_By);
-      request.input('Timer_Based', Timer_Based || 0);
-      request.input('Assigned_Emp_Id', Assigned_Emp_Id)
-
-      const result = await request.execute('Task_Assign_SP_Update');
-
-      if (result.rowsAffected.length > 0) {
-        dataFound(res, [], 'Changes Saved!');
-      } else {
-        return falied(res, 'Failed to Save Changes, Please try again')
-      }
-
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
-  const deleteAssignEmployeeForTask = async (req, res) => {
-    const { Id, T_Sub_Task_Id, Emp_Id } = req.body;
-
-    if ((!Id && !T_Sub_Task_Id) || !Emp_Id) {
-      return invalidInput(res, 'Id, T_Sub_Task_Id, Emp_Id is required')
-    }
-
-    try {
-      const request = new sql.Request();
-      request.input('Mode', 3);
-      request.input('Id', Id);
-      request.input('T_Sub_Task_Id', T_Sub_Task_Id);
-      request.input('Emp_Id', Emp_Id);
-      request.input('Task_Assign_dt', '');
-      request.input('Prity', '');
-      request.input('Sch_Time', '');
-      request.input('Ord_By', '');
-      request.input('Timer_Based', '');
-      request.input('Assigned_Emp_Id', '');
-
-      const result = await request.execute('Task_Assign_SP_Update');
-
-      if (result.rowsAffected.length > 0) {
-        dataFound(res, [], 'Employee Removed From Assigned Task!');
-      } else {
-        return falied(res, 'Failed to Save Changes, Please try again')
-      }
-
-    } catch (e) {
-      return servError(e, res)
-    }
-  }
-
-  const removeAssignedEmp = async (req, res) => {
-    try {
-      const { modifiedDetails, mode } = req.body;
-      const sq = `exec Task_Assign_SP_Update @Mode=${mode}, @Id='${modifiedDetails.Id}', @T_Sub_Task_Id='${modifiedDetails.T_Sub_Task_Id}', @Emp_Id='${modifiedDetails.Emp_Id}', 
-                @Task_Assign_dt='${modifiedDetails.Task_Assign_dt}', @Prity='${modifiedDetails.Prity}', @Sch_Time='${modifiedDetails.Sch_Time}', 
-                @Ord_By='${modifiedDetails.Ord_By}', @Timer_Based='${modifiedDetails.Timer_Based}';`
-
-      const request = new sql.Request();
-      const result = await request.query(sq);
-      if (result.rowsAffected[0] > 0) {
-        res.status(200).json({});
-      } else {
-        res.status(400).json({});
-      }
-    } catch (err) {
-      return res.status(500).send({ data: [], message: err })
-    }
-  }
-
   const getMyTasks = async (req, res) => {
     const { Branch, Emp_Id } = req.query;
 
@@ -338,17 +200,106 @@ const taskModule = () => {
   }
 
 
+  const getTaskAssignedUsers = async (req, res) => {
+
+    try {
+      const query = `
+      SELECT 
+      	td.Emp_Id AS UserId,
+      	u.Name
+      FROM 
+        tbl_Work_Master AS td
+      	LEFT JOIN tbl_Users AS u
+      	ON u.UserId = td.Emp_Id
+      GROUP BY
+      	td.Emp_Id,
+      	u.Name`;
+
+      const result = await sql.query(query);
+
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } catch (e) {
+      servError(e, res);
+    }
+  }
+
+  const getFilteredUsersBasedOnTasks = async (req, res) => {
+    const { Task_Id } = req.query;
+
+    if (!Task_Id) {
+      return invalidInput(res, 'Task_Id is required');
+    }
+
+    try {
+      const query = `
+      SELECT 
+      	td.Emp_Id,
+      	u.Name
+      FROM 
+        tbl_Work_Master AS td
+      	LEFT JOIN tbl_Users AS u
+      	ON u.UserId = td.Emp_Id
+      WHERE 
+      	td.Task_Id = @task_id
+      GROUP BY
+      	td.Emp_Id,
+      	u.Name`;
+      const request = new sql.Request();
+      request.input('task_id', Task_Id);
+
+      const result = await request.query(query);
+
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } catch (e) {
+      servError(e, res)
+    }
+  }
+
+  const getAssignedTasks = async (req, res) => {
+    try {
+      const query = `
+      SELECT
+      	td.Task_Id,
+      	t.Task_Name
+      FROM
+        tbl_Work_Master AS td
+      	LEFT JOIN tbl_Task AS t
+      	ON t.Task_Id = td.Task_Id
+      GROUP BY
+      	td.Task_Id,
+      	t.Task_Name`;
+
+      const result = await sql.query(query);
+
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } catch (e) {
+      servError(e, res)
+    }
+  }
+
+
   return {
     getTaskDropDown,
     getTasks,
     createTask,
     editTask,
     deleteTask,
-    assignEmployeeForTask,
-    editAssignEmployeeForTask,
-    deleteAssignEmployeeForTask,
-    removeAssignedEmp,
     getMyTasks,
+    getTaskAssignedUsers,
+    getFilteredUsersBasedOnTasks,
+    getAssignedTasks,
   }
 }
 
