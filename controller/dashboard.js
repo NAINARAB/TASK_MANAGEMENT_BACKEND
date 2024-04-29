@@ -276,9 +276,173 @@ const DashboardRouter = () => {
         }
     }
 
+    const getEmployeeAbstract = async (req, res) => {
+        const { UserId } = req.query;
+
+        if (isNaN(UserId)) {
+            return invalidInput(res, 'UserId is required')
+        }
+
+        try {
+            const query = `
+            SELECT 
+            	u.UserId,
+            	u.Name,
+            	u.UserTypeId,
+            	ut.UserType,
+            	u.BranchId,
+            	b.BranchName,
+
+            	COALESCE((
+            		SELECT 
+            			DISTINCT td.Project_Id,
+            			p.Project_Name
+                
+            		FROM
+            			tbl_Task_Details AS td
+            			LEFT JOIN tbl_Project_Master AS p
+            			ON p.Project_Id = td.Project_Id
+            		WHERE
+            			td.Emp_Id = u.UserId
+            		FOR JSON PATH
+            	), '[]') AS Projects,
+            
+            	COALESCE((
+            		SELECT 
+            			td.Task_Id,
+            			t.Task_Name,
+            			td.AN_No,
+            			CONVERT(DATE, td.Est_Start_Dt) AS Est_Start_Dt,
+            			CONVERT(DATE, td.Est_End_Dt) AS Est_End_Dt,
+            			td.Sch_Time,
+            			td.EN_Time,
+            			td.Sch_Period,
+            			td.Timer_Based,
+
+            			COALESCE((
+            				SELECT
+            					wk.Work_Id,
+            					wk.Work_Dt,
+            					wk.Work_Done,
+            					wk.Start_Time,
+            					wk.End_Time,
+            					wk.Tot_Minutes,
+            					wk.Work_Status,
+            					s.Status AS StatusGet
+            				FROM
+            					tbl_Work_Master AS wk
+            					LEFT JOIN tbl_Status AS s
+            					ON s.Status_Id = wk.Work_Status
+            				WHERE
+            					wk.AN_No = td.AN_No
+            				FOR JSON PATH
+            			), '[]') AS Work_Details
+                    
+            		FROM
+            			tbl_Task_Details AS td
+            			LEFT JOIN tbl_Task AS t
+            			ON td.Task_Id = t.Task_Id
+            		WHERE
+            			td.Emp_Id = u.UserId
+            		FOR JSON PATH
+            	), '[]') AS AssignedTasks,
+            
+            	COALESCE((
+            		SELECT
+            			wm.*,
+                        t.Task_Name,
+                        s.Status AS WorkStatus,
+                
+                        COALESCE((
+            				SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
+                            0
+            			) AS Timer_Based,
+                    
+            			COALESCE((
+            				SELECT 
+            					wp.Current_Value,
+            					wp.Default_Value,
+            					wp.Param_Id,
+            					pm.Paramet_Name,
+                                pm.Paramet_Data_Type
+            				FROM
+            					tbl_Work_Paramet_DT as wp
+            					LEFT JOIN tbl_Paramet_Master AS pm
+            					ON pm.Paramet_Id = wp.Param_Id
+            				WHERE 
+            					Work_Id = wm.Work_Id
+            				FOR JSON PATH
+            			), '[]') AS Parameter_Details
+                    
+                    FROM 
+                        tbl_Work_Master AS wm
+                    LEFT JOIN 
+                        tbl_Task AS t ON t.Task_Id = wm.Task_Id
+                    LEFT JOIN
+                        tbl_Status AS s ON s.Status_Id = wm.Work_Status
+                    LEFT JOIN
+                        tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
+
+            		WHERE
+            			(wm.AN_No = td.AN_No OR wm.AN_No = 0)
+            			AND
+            			wm.Emp_Id = u.UserId
+			            AND
+			            wm.Task_Id != 2
+            		FOR JSON PATH
+            	), '[]') AS WorkDetails
+            
+            FROM
+            	tbl_Users AS u
+            	LEFT JOIN tbl_User_Type AS ut ON ut.Id = u.UserTypeId
+            	LEFT JOIN tbl_Business_Master AS b ON b.BranchId = u.BranchId
+            WHERE
+            	u.UserId = @user
+            `;
+
+            const request = new sql.Request()
+            request.input('user', UserId)
+
+            const result = await request.query(query);
+
+            if (result.recordset.length > 0) {
+
+                const levelOneParsed = result.recordset.map(o => ({
+                    ...o,
+                    Projects: JSON.parse(o.Projects), 
+                    AssignedTasks: JSON.parse(o.AssignedTasks),
+                    WorkDetails: JSON.parse(o?.WorkDetails)
+                }))
+
+                const levelTwoParsed = levelOneParsed.map(o => ({
+                    ...o,
+
+                    AssignedTasks: o?.AssignedTasks?.map(ao => ({
+                        ...ao,
+                        Work_Details: JSON.parse(ao?.Work_Details)
+                    })),
+
+                    WorkDetails: o?.WorkDetails?.map(wo => ({
+                        ...wo,
+                        Parameter_Details: JSON.parse(wo?.Parameter_Details)
+                    }))
+
+                }))
+
+                dataFound(res, levelTwoParsed)
+
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
     return {
         getDashboardData,
         getUserByAuth,
+        getEmployeeAbstract
     }
 }
 

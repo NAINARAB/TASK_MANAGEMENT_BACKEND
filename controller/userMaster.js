@@ -160,9 +160,9 @@ const userMaster = () => {
   const seletUsersName = async (req, res) => {
     const { AllUser, BranchId } = req.query;
 
-    if (!AllUser || !BranchId) {
-      return invalidInput(res, 'AllUser, BranchId is required');
-    }
+    // if (!AllUser || !BranchId) {
+    //   return invalidInput(res, 'AllUser, BranchId is required');
+    // }
 
     try {
       let exeQuery = '';
