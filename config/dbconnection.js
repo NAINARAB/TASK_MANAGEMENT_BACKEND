@@ -1,31 +1,31 @@
 const sql = require("mssql");
 require('dotenv').config();
 
-// const config = {
-//   server: "103.235.104.114",
-//   database: "SMT_SUDEEKHA",
-//   driver: "SQL Server",
-//   user: "SMT_USER",
-//   password: "z6F@d6k31",
-//   stream: false,
-//   options: {
-//     trustedConnection: true,
-//     trustServerCertificate: true,
-//   },
-// };
-
 const config = {
-  server: process.env.SERVER,
-  database: process.env.DATABASE,
+  server: "103.235.104.114",
+  database: "SMT_SUDEEKHA",
   driver: "SQL Server",
-  user: process.env.USER,
-  password: process.env.PASSWORD,
+  user: "SMT_USER",
+  password: "z6F@d6k31",
   stream: false,
   options: {
     trustedConnection: true,
     trustServerCertificate: true,
   },
 };
+
+// const config = {
+//   server: process.env.SERVER,
+//   database: process.env.DATABASE,
+//   driver: "SQL Server",
+//   user: process.env.USER,
+//   password: process.env.PASSWORD,
+//   stream: false,
+//   options: {
+//     trustedConnection: true,
+//     trustServerCertificate: true,
+//   },
+// };
 
 sql.connect(config, function (err) {
   if (err) {

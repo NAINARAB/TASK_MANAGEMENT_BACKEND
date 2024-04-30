@@ -311,6 +311,7 @@ const DashboardRouter = () => {
             		SELECT 
             			td.Task_Id,
             			t.Task_Name,
+                        t.Task_Desc,
             			td.AN_No,
             			CONVERT(DATE, td.Est_Start_Dt) AS Est_Start_Dt,
             			CONVERT(DATE, td.Est_End_Dt) AS Est_End_Dt,
@@ -328,7 +329,24 @@ const DashboardRouter = () => {
             					wk.End_Time,
             					wk.Tot_Minutes,
             					wk.Work_Status,
-            					s.Status AS StatusGet
+            					s.Status AS StatusGet,
+
+								COALESCE((
+            						SELECT 
+            							wp.Current_Value,
+            							wp.Default_Value,
+            							wp.Param_Id,
+            							pm.Paramet_Name,
+										pm.Paramet_Data_Type
+            						FROM
+            							tbl_Work_Paramet_DT as wp
+            							LEFT JOIN tbl_Paramet_Master AS pm
+            							ON pm.Paramet_Id = wp.Param_Id
+            						WHERE 
+            							wp.Work_Id = wk.Work_Id
+            						FOR JSON PATH
+								), '[]') AS Parameter_Details
+
             				FROM
             					tbl_Work_Master AS wk
             					LEFT JOIN tbl_Status AS s
@@ -370,7 +388,7 @@ const DashboardRouter = () => {
             					LEFT JOIN tbl_Paramet_Master AS pm
             					ON pm.Paramet_Id = wp.Param_Id
             				WHERE 
-            					Work_Id = wm.Work_Id
+            					wp.Work_Id = wm.Work_Id
             				FOR JSON PATH
             			), '[]') AS Parameter_Details
                     
@@ -429,7 +447,19 @@ const DashboardRouter = () => {
 
                 }))
 
-                dataFound(res, levelTwoParsed)
+                const levelThreeParsed = levelTwoParsed.map(o => ({
+                    ...o,
+                    
+                    AssignedTasks: o?.AssignedTasks?.map(ao => ({
+                        ...ao,
+                        Work_Details: ao?.Work_Details?.map(wo => ({
+                            ...wo,
+                            Parameter_Details: JSON.parse(wo?.Parameter_Details)
+                        }))
+                    }))
+                }))
+
+                dataFound(res, levelThreeParsed)
 
             } else {
                 noData(res)
