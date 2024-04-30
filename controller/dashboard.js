@@ -363,52 +363,7 @@ const DashboardRouter = () => {
             		WHERE
             			td.Emp_Id = u.UserId
             		FOR JSON PATH
-            	), '[]') AS AssignedTasks,
-            
-            	COALESCE((
-            		SELECT
-            			wm.*,
-                        t.Task_Name,
-                        s.Status AS WorkStatus,
-                
-                        COALESCE((
-            				SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
-                            0
-            			) AS Timer_Based,
-                    
-            			COALESCE((
-            				SELECT 
-            					wp.Current_Value,
-            					wp.Default_Value,
-            					wp.Param_Id,
-            					pm.Paramet_Name,
-                                pm.Paramet_Data_Type
-            				FROM
-            					tbl_Work_Paramet_DT as wp
-            					LEFT JOIN tbl_Paramet_Master AS pm
-            					ON pm.Paramet_Id = wp.Param_Id
-            				WHERE 
-            					wp.Work_Id = wm.Work_Id
-            				FOR JSON PATH
-            			), '[]') AS Parameter_Details
-                    
-                    FROM 
-                        tbl_Work_Master AS wm
-                    LEFT JOIN 
-                        tbl_Task AS t ON t.Task_Id = wm.Task_Id
-                    LEFT JOIN
-                        tbl_Status AS s ON s.Status_Id = wm.Work_Status
-                    LEFT JOIN
-                        tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
-
-            		WHERE
-            			(wm.AN_No = td.AN_No OR wm.AN_No = 0)
-            			AND
-            			wm.Emp_Id = u.UserId
-			            AND
-			            wm.Task_Id != 2
-            		FOR JSON PATH
-            	), '[]') AS WorkDetails
+            	), '[]') AS AssignedTasks
             
             FROM
             	tbl_Users AS u
@@ -429,7 +384,7 @@ const DashboardRouter = () => {
                     ...o,
                     Projects: JSON.parse(o.Projects), 
                     AssignedTasks: JSON.parse(o.AssignedTasks),
-                    WorkDetails: JSON.parse(o?.WorkDetails)
+                    WorkDetails: o?.WorkDetails ? JSON.parse(o?.WorkDetails) : []
                 }))
 
                 const levelTwoParsed = levelOneParsed.map(o => ({
@@ -440,10 +395,10 @@ const DashboardRouter = () => {
                         Work_Details: JSON.parse(ao?.Work_Details)
                     })),
 
-                    WorkDetails: o?.WorkDetails?.map(wo => ({
+                    WorkDetails: Array.isArray(o?.WorkDetails) ? o?.WorkDetails?.map(wo => ({
                         ...wo,
                         Parameter_Details: JSON.parse(wo?.Parameter_Details)
-                    }))
+                    })) : []
 
                 }))
 
