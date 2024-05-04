@@ -203,6 +203,29 @@ const usercontroller = () => {
     }
   }
 
+  const getUserAuthorization = async (req, res) => {
+    const { Auth } = req.query;
+
+    if (!Auth) {
+      return res.status(400).json({ MainMenu: [], SubMenu: [], message: 'Invalid Auth', success: false });
+    }
+
+    try {
+      const request = new sql.Request();
+      request.input('Autheticate_Id', Auth)
+
+      const result = await request.execute('User_Rights_Online');
+      if (result.recordsets.length > 0) {
+        return res.status(200).json({ MainMenu: result.recordsets[0], SubMenu: result.recordsets[1], message: 'no Data', success: true });
+      } else {
+        return res.status(400).json({ MainMenu: [], SubMenu: [], message: 'no Data', success: true });
+      }
+    } catch (e) {
+      console.log(e)
+      return res.status(500).json({ MainMenu: [], SubMenu: [], message: 'Server Error', success: false });
+    }
+  }
+
   const getMenuByUserType = async (req, res) => {
     const { UserType } = req.query;
 
@@ -797,6 +820,7 @@ const usercontroller = () => {
 
     authUser,
     getMenu,
+    getUserAuthorization,
     getMenuByUserType,
 
     modifyUserRights,

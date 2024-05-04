@@ -120,6 +120,7 @@ router.delete('/baseGroup', baseGroupMaster.deleteBaseGroup);
 
 router.get('/authentication', usercontroller.authUser);
 router.get('/appMenu', usercontroller.getMenu);
+router.get('/auth/user', usercontroller.getUserAuthorization);
 router.get('/appMenuUType', usercontroller.getMenuByUserType)
 router.post('/userBasedRights', usercontroller.modifyUserRights)
 router.post('/userTypeBasedRights', usercontroller.modifyUserTypeRights);
