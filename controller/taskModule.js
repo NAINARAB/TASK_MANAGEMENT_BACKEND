@@ -26,38 +26,44 @@ const taskModule = () => {
       const result = await sql.query(`
       SELECT 
 	      t.*,
-	      COALESCE(ut.Task_Name, 'PRIMARY TASK') AS Under_Task, 
-	      COALESCE(tty.Task_Type, 'Undefined') AS Task_Group,
+
+		    COALESCE((
+			    SELECT 
+			    	Task_Name
+			    FROM
+			    	tbl_Task
+			    WHERE
+			    	Task_Id = t.Under_Task_Id
+		    ), 'PRIMARY TASK') AS Under_Task,
+      
+		    COALESCE((
+			    SELECT 
+			    	Task_Type
+			    FROM
+			    	tbl_Task_Type
+			    WHERE
+			    	Task_Type_Id = t.Task_Group_Id
+		    ), 'Unknown') AS Task_Group,
 	
-	      COALESCE(
-	      	(
-	      			SELECT 
-                param.PA_Id,
-                param.Task_Id,
-                param.Param_Id AS Paramet_Id,
-                param.Default_Value,
-                pm.Paramet_Name,
-                pm.Paramet_Data_Type
-	      			FROM
-	      				tbl_Task_Paramet_DT AS param
-                LEFT JOIN tbl_Paramet_Master AS pm
-                ON pm.Paramet_Id = param.Param_Id
-	      			WHERE
-	      				Task_Id = t.Task_Id
-	      			FOR JSON PATH
-	      	), '[]'
-	      ) AS Det_string
+	      COALESCE((
+	      	SELECT 
+            param.PA_Id,
+            param.Task_Id,
+            param.Param_Id AS Paramet_Id,
+            param.Default_Value,
+            pm.Paramet_Name,
+            pm.Paramet_Data_Type
+	      	FROM
+	      		tbl_Task_Paramet_DT AS param
+            LEFT JOIN tbl_Paramet_Master AS pm
+            ON pm.Paramet_Id = param.Param_Id
+	      	WHERE
+	      		Task_Id = t.Task_Id
+	      	FOR JSON PATH
+	      ), '[]') AS Det_string
 
-      FROM tbl_Task AS t
-	
-	      LEFT JOIN tbl_Task AS ut
-	      ON t.Under_Task_Id = t.Task_Id
-
-	      LEFT JOIN tbl_Users AS u
-	      ON u.UserId = t.Entry_By
-
-	      LEFT JOIN tbl_Task_Type AS tty
-	      ON tty.Task_Type_Id = t.Task_Group_Id
+      FROM 
+        tbl_Task AS t
 
       ORDER BY 
         CONVERT(DATE, t.Entry_Date) DESC`)
@@ -198,7 +204,6 @@ const taskModule = () => {
       return servError(e, res);
     }
   }
-
 
   const getTaskAssignedUsers = async (req, res) => {
 
