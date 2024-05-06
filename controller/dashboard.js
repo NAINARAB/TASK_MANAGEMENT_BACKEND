@@ -206,6 +206,31 @@ const DashboardRouter = () => {
         }
     }
 
+    const getTallyWorkDetails = async (req, res) => {
+        const { UserId, From, To } = req.query;
+
+        if (isNaN(UserId)) {
+            return invalidInput(res, 'UserId is required');
+        }
+
+        try {
+            const request = new sql.Request();
+            request.input('User_Mgt_Id', UserId);
+            request.input('Fromdate', From ? new Date(From).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+            request.input('Todate', To ? new Date(To).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+
+            const result = await request.execute('Transaction_User_Count_List_By_Emp_Id');
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset);
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
     const getUserByAuth = async (req, res) => {
         const { Auth } = req.query;
 
@@ -320,6 +345,20 @@ const DashboardRouter = () => {
             			td.Sch_Period,
             			td.Timer_Based,
 
+                        COALESCE((
+							SELECT 
+								tpd.*,
+								tpdtpm.Paramet_Name,
+								tpdtpm.Paramet_Data_Type
+							FROM
+								tbl_Task_Paramet_DT AS tpd
+								LEFT JOIN tbl_Paramet_Master AS tpdtpm
+								ON tpdtpm.Paramet_Id = tpd.Param_Id
+							WHERE
+								tpd.Task_Id = td.Task_Id
+							FOR JSON PATH
+						), '[]') AS Task_Param,
+
             			COALESCE((
             				SELECT
             					wk.Work_Id,
@@ -392,7 +431,8 @@ const DashboardRouter = () => {
 
                     AssignedTasks: o?.AssignedTasks?.map(ao => ({
                         ...ao,
-                        Work_Details: JSON.parse(ao?.Work_Details)
+                        Work_Details: JSON.parse(ao?.Work_Details),
+                        Task_Param: JSON.parse(ao?.Task_Param)
                     })),
 
                     WorkDetails: Array.isArray(o?.WorkDetails) ? o?.WorkDetails?.map(wo => ({
@@ -426,8 +466,9 @@ const DashboardRouter = () => {
 
     return {
         getDashboardData,
+        getTallyWorkDetails,
         getUserByAuth,
-        getEmployeeAbstract
+        getEmployeeAbstract,
     }
 }
 

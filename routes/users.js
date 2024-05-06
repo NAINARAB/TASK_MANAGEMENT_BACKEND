@@ -167,6 +167,7 @@ router.put('/task/assignEmployee', TaskAssignControl.putAssignTaskForEmployee);
 router.get('/task/workedDetails', TaskAssignControl.getWorkedDetailsForTask)
 
 router.get('/dashboardData', DashboardController.getDashboardData);
+router.get('/getTallyData', DashboardController.getTallyWorkDetails);
 router.get('/employeeAbstract', DashboardController.getEmployeeAbstract)
 router.get('/notification', NotificationController.getNotificartion);
 router.post('/notification', NotificationController.postNotificartion);

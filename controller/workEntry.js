@@ -377,10 +377,26 @@ const workController = () => {
                     t.Task_Name,
                     u.Name AS EmployeeName,
                     s.Status AS WorkStatus,
+
                     COALESCE(
                         (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
                         0
-                    ) AS Timer_Based
+                    ) AS Timer_Based,
+
+					COALESCE((
+						SELECT
+							wpm.*,
+							tpm.Paramet_Name,
+							tpm.Paramet_Data_Type
+						FROM
+							tbl_Work_Paramet_DT AS wpm
+							LEFT JOIN tbl_Paramet_Master AS tpm
+							ON tpm.Paramet_Id = wpm.Param_Id 
+						WHERE
+							wpm.Work_Id = wm.Work_Id
+						FOR JSON PATH
+					), '[]') AS Work_Param
+
                 FROM 
                     tbl_Work_Master AS wm
                 LEFT JOIN
@@ -420,7 +436,11 @@ const workController = () => {
             const result = await sql.query(query);
 
             if (result.recordset.length > 0) {
-                dataFound(res, result.recordset);
+                const parsed = result.recordset.map(o => ({
+                    ...o,
+                    Work_Param: JSON.parse(o?.Work_Param)
+                }))
+                dataFound(res, parsed);
             } else {
                 noData(res);
             }
@@ -432,31 +452,6 @@ const workController = () => {
     const getAllGroupedWorkedData = async (req, res) => {
         const { Emp_Id, Project_Id, Task_Id, from, to } = req.query;
         try {
-            // let query = `
-            //     SELECT
-            //         wm.*,
-            //         p.Project_Name,
-            //         t.Task_Name,
-            //         u.Name AS EmployeeName,
-            //         s.Status AS WorkStatus,
-            //         COALESCE(
-            //             (SELECT Timer_Based FROM tbl_Task_Details WHERE AN_No = wm.AN_No), 
-            //             0
-            //         ) AS Timer_Based
-            //     FROM 
-            //         tbl_Work_Master AS wm
-            //     LEFT JOIN
-            //         tbl_Project_Master AS p ON p.Project_Id = wm.Project_Id
-            //     LEFT JOIN 
-            //         tbl_Task AS t ON t.Task_Id = wm.Task_Id
-            //     LEFT JOIN
-            //         tbl_Users AS u ON u.UserId = wm.Emp_Id
-            //     LEFT JOIN
-            //         tbl_Status AS s ON s.Status_Id = wm.Work_Status
-            //     LEFT JOIN
-            //         tbl_Task_Details AS td ON td.Task_Levl_Id = wm.Task_Levl_Id
-            //     WHERE 
-            //         (wm.AN_No = td.AN_No OR wm.AN_No = 0)`;
 
             let query = `
             SELECT 
@@ -480,7 +475,21 @@ const workController = () => {
             						WHERE 
             							AN_No = wm.AN_No
             					), 0
-            				) AS Timer_Based
+            				) AS Timer_Based,
+
+                            COALESCE((
+                                SELECT
+                                    wpm.*,
+                                    tpm.Paramet_Name,
+                                    tpm.Paramet_Data_Type
+                                FROM
+                                    tbl_Work_Paramet_DT AS wpm
+                                    LEFT JOIN tbl_Paramet_Master AS tpm
+                                    ON tpm.Paramet_Id = wpm.Param_Id 
+                                WHERE
+                                    wpm.Work_Id = wm.Work_Id
+                                FOR JSON PATH
+                            ), '[]') AS Work_Param
                         
             			FROM 
             				tbl_Work_Master AS wm
@@ -535,11 +544,21 @@ const workController = () => {
             const result = await sql.query(query);
 
             if (result.recordset.length > 0) {
+
                 const parsedResponse = result.recordset.map(o => ({
                     ...o,
                     TASK_GROUP: JSON.parse(o?.TASK_GROUP)
                 }))
-                dataFound(res, parsedResponse);
+
+                const levelTwoParsed = parsedResponse.map(o => ({
+                    ...o,
+                    TASK_GROUP: o?.TASK_GROUP?.map(oo => ({
+                        ...oo,
+                        Work_Param: JSON.parse(oo?.Work_Param)
+                    }))
+                }))
+
+                dataFound(res, levelTwoParsed);
             } else {
                 noData(res);
             }

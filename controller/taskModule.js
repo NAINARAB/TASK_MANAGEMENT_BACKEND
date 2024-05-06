@@ -103,7 +103,6 @@ const taskModule = () => {
       request.input('Det_string', Det_string || '')
 
       const result = await request.execute('Task_SP');
-      console.log(result);
 
       if (result.rowsAffected.length > 0 && result.recordset[0].Task_Id) {
 
