@@ -539,7 +539,6 @@ const workController = () => {
             
             FROM 
             	tbl_Task_Type AS tty`;
-                
             const result = await sql.query(query);
 
             if (result.recordset.length > 0) {
