@@ -291,7 +291,7 @@ const workController = () => {
     }
 
     const getAllWorkedDataOfEmp = async (req, res) => {
-        const { Emp_Id, Start, End } = req.query;
+        const { Emp_Id, Start, End, Task_Id } = req.query;
 
         if (!Emp_Id) {
             return invalidInput(res, 'Emp_Id is required')
@@ -343,6 +343,13 @@ const workController = () => {
                     AND
                     wm.Emp_Id = '${Emp_Id}'`;
 
+            if (Task_Id) {
+                query += `
+                AND
+                wm.Task_Id = '${Task_Id}'
+                `
+            }
+
             if (Start && End) {
                 query += `
                 AND
@@ -350,6 +357,8 @@ const workController = () => {
                 AND
                 CONVERT(DATE, wm.Work_Dt) <= CONVERT(DATE, '${End}')`
             }
+
+            query += `ORDER BY CONVERT(DATE, wm.Work_Dt) DESC, CONVERT(TIME, wm.Start_Time)`
 
             const result = await sql.query(query);
 
@@ -666,6 +675,40 @@ const workController = () => {
         }
     }
 
+    const EmployeeTaskDropDown = async (req, res) => {
+        const {Emp_Id} = req.query;
+
+        if (isNaN(Emp_Id)) {
+            return invalidInput(res, 'Emp_Id is Required');
+        }
+
+        try {
+            const query = `
+            SELECT 
+            	DISTINCT(wm.Task_Id),
+            	COALESCE(t.Task_Name, 'unknown task') AS Task_Name
+            FROM
+            	tbl_Task_Details AS wm
+            	LEFT JOIN tbl_Task AS t
+            	ON t.Task_Id = wm.Task_Id
+            WHERE
+            	wm.Emp_Id = @emp`;
+            
+            const request = new sql.Request();
+            request.input('emp', Emp_Id);
+
+            const result = await request.query(query);
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
 
     return {
         postStartTime,
@@ -677,7 +720,8 @@ const workController = () => {
         getAllWorkedData,
         getAllGroupedWorkedData,
         taskWorkDetailsPieChart,
-        taskWorkDetailsBarChart
+        taskWorkDetailsBarChart,
+        EmployeeTaskDropDown,
     }
 }
 
