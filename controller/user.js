@@ -118,7 +118,7 @@ const usercontroller = () => {
       if (result?.length > 0) {
         return res.status(200).json({ isValidUser: true, message: 'valid Token', success: true });
       } else {
-        return res.status(200).json({ isValidUser: false, message: 'invalid token', success: false });
+        return res.status(404).json({ isValidUser: false, message: 'invalid token', success: false });
       }
     } catch (e) {
       return servError(e, res)
@@ -132,24 +132,60 @@ const usercontroller = () => {
     if (!username || !password) {
       return res.status(400).json({ data: {}, success: false, message: 'Invalid username or password' })
     }
+    console.log(username, md5Hash(password))
 
     try {
-      const loginSP = new sql.Request();
-      loginSP.input('UserName', username);
-      loginSP.input('Password', md5Hash(password));
 
-      const result = await loginSP.execute('Qry_GetUser');
+      const query = `
+        SELECT
+          u.UserTypeId,
+          u.UserId,
+          u.UserName,
+          u.Password,
+          u.BranchId,
+          b.BranchName,
+          u.Name,
+          ut.UserType,
+          u.Autheticate_Id,
+          u.Company_id,
+          c.Company_Name
 
-      if (result.recordset.length > 0) {
-        const userInfo = result.recordset[0];
+        FROM tbl_Users AS u
+
+        LEFT JOIN tbl_Branch_Master AS b
+        ON b.BranchId = u.BranchId
+
+        LEFT JOIN tbl_User_Type AS ut
+        ON ut.Id = u.UserTypeId
+
+        LEFT JOIN tbl_Company_Master AS c
+        ON c.Company_id = u.Company_Id
+
+        WHERE UserName = @UserName AND Password = @Password AND UDel_Flag= 0`;
+
+      const loginReq = new sql.Request();
+      loginReq.input('UserName', String(username).trim());
+      loginReq.input('Password', md5Hash(password));
+
+      const loginResult = await loginReq.query(query);
+
+
+      // const loginSP = new sql.Request();
+      // loginSP.input('UserName', username);
+      // loginSP.input('Password', md5Hash(password));
+
+      // const result = await loginSP.execute('Qry_GetUser');
+
+      if (loginResult.recordset.length > 0) {
+        const userInfo = loginResult.recordset[0];
         const ssid = `${Math.floor(100000 + Math.random() * 900000)}${moment().format('DD-MM-YYYY hh:mm:ss')}`;
 
         const sessionSP = new sql.Request();
-        sessionSP.input('Id', sql.Int, 0);
-        sessionSP.input('UserId', sql.BigInt, userInfo.UserId);
-        sessionSP.input('SessionId', sql.NVarChar, ssid);
-        sessionSP.input('LogStatus', sql.Int, 1);
-        sessionSP.input('APP_Type', sql.Int, 1);
+        sessionSP.input('Id', 0);
+        sessionSP.input('UserId', userInfo.UserId);
+        sessionSP.input('SessionId', ssid);
+        sessionSP.input('LogStatus', 1);
+        sessionSP.input('APP_Type', 1);
 
         const sessionResult = await sessionSP.execute('UserLogSP');
 
@@ -727,7 +763,7 @@ const usercontroller = () => {
     }
 
     try {
-      const postQuery =`
+      const postQuery = `
       INSERT INTO tbl_Tacking_Test 
         (Emp_Id, W_Date, Latitude, Logitude, Web_URL) 
       VALUES 

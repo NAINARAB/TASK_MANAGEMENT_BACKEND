@@ -17,7 +17,8 @@ const TaskAssignControl = require('../controller/taskAssign');
 const DashboardController = require('../controller/dashboard');
 const NotificationController = require('../controller/notification');
 const TaskPrarameter = require('../controller/taskParameters');
-const attendance = require('../controller/attendance');
+const AttendanceController = require('../controller/attendance');
+const CustomerMaster = require('../controller/erp/customerMaster')
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -112,7 +113,8 @@ router.post('/users', userMaster.postUser);
 router.put('/users', userMaster.editUser);
 router.delete('/users', userMaster.deleteUser);
 router.get('/userDropDown', userMaster.userDropdown);
-router.get('/userName', userMaster.seletUsersName)
+router.get('/userName', userMaster.seletUsersName);
+router.put('/users/changePassword', userMaster.changePassword)
 
 router.get('/baseGroup', baseGroupMaster.getBaseGroup);
 router.post('/baseGroup', baseGroupMaster.postBaseGroup);
@@ -177,15 +179,19 @@ router.get('/getUserByAuth', DashboardController.getUserByAuth);
 
 router.get('/task/employeeInvolved', workController.EmployeeTaskDropDown);
 
-router.post('/attendance', attendance.addAttendance);
-router.put('/attendance', attendance.closeAttendance);
-router.delete('/attendance', attendance.closeAttendance);
+router.post('/attendance', AttendanceController.addAttendance);
+router.put('/attendance', AttendanceController.closeAttendance);
+router.delete('/attendance', AttendanceController.closeAttendance);
 
-router.get('/myTodayAttendance', attendance.getMyTodayAttendance);
+router.get('/myTodayAttendance', AttendanceController.getMyTodayAttendance);
 
-router.get('/myAttendanceHistory', attendance.getAttendanceHistory);
+router.get('/myAttendanceHistory', AttendanceController.getAttendanceHistory);
 
-router.get('/getMyLastAttendance', attendance.getMyLastAttendanceOfToday);
+router.get('/getMyLastAttendance', AttendanceController.getMyLastAttendanceOfToday);
+
+
+
+
 
 
 

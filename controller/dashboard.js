@@ -231,62 +231,130 @@ const DashboardRouter = () => {
         }
     }
 
+    // const getUserByAuth = async (req, res) => {
+    //     const { Auth } = req.query;
+
+    //     if (!Auth) {
+    //         return invalidInput(res, 'Auth is required');
+    //     }
+
+    //     try {
+    //         const query = `
+    //         SELECT
+    //         	u.*,
+    //         	COALESCE(
+    //         		ut.UserType,
+    //         		'UnKnown UserType'
+    //         	) AS UserType,
+    //         	COALESCE(
+    //         		b.BranchName,
+    //         		'Unknown Branch'
+    //         	) AS BranchName,
+    //         	COALESCE(
+    //         		c.Company_id,
+    //         		'0'
+    //         	) AS Company_id,
+                
+    //         	(
+    //         		SELECT 
+    //         			TOP (1)
+    //         			UserId,
+    //         			SessionId,
+    //         			InTime
+    //         		FROM
+    //         			tbl_User_Log
+    //         		WHERE
+    //         			UserId = u.UserId
+    //         		ORDER BY
+    //         			InTime DESC
+    //         			FOR JSON PATH
+    //         	) AS session
+                
+    //         FROM 
+    //         	tbl_Users AS u
+    //         LEFT JOIN
+    //         	tbl_User_Type AS ut
+    //         	ON ut.Id = u.UserTypeId
+    //         LEFT JOIN
+    //         	tbl_Business_Master AS b
+    //         	ON b.BranchId = u.BranchId
+    //         LEFT JOIN
+    //         	tbl_Company_Master AS c
+    //         	ON c.Company_id = b.Company_id
+                
+    //         WHERE
+    //         	Autheticate_Id = '${Auth}'
+    //         `;
+
+    //         const result = await sql.query(query);
+
+    //         if (result.recordset.length > 0) {
+    //             result.recordset[0].session = result.recordset[0].session ? JSON.parse(result.recordset[0].session) : [{
+    //                 UserId: result.recordset[0].UserId, SessionId: new Date(), InTime: new Date()
+    //             }]
+    //             return dataFound(res, result.recordset)
+    //         } else {
+    //             return falied(res, 'User Not Found')
+    //         }
+    //     } catch (e) {
+    //         servError(e, res)
+    //     }
+    // }
+
     const getUserByAuth = async (req, res) => {
         const { Auth } = req.query;
 
         if (!Auth) {
-            return invalidInput(res, 'Auth is required');
+            return invalidInput(res, 'Auth required');
         }
 
         try {
             const query = `
             SELECT
-            	u.*,
-            	COALESCE(
-            		ut.UserType,
-            		'UnKnown UserType'
-            	) AS UserType,
-            	COALESCE(
-            		b.BranchName,
-            		'Unknown Branch'
-            	) AS BranchName,
-            	COALESCE(
-            		c.Company_id,
-            		'0'
-            	) AS Company_id,
-                
-            	(
-            		SELECT 
-            			TOP (1)
-            			UserId,
-            			SessionId,
-            			InTime
-            		FROM
-            			tbl_User_Log
-            		WHERE
-            			UserId = u.UserId
-            		ORDER BY
-            			InTime DESC
-            			FOR JSON PATH
-            	) AS session
-                
-            FROM 
-            	tbl_Users AS u
-            LEFT JOIN
-            	tbl_User_Type AS ut
-            	ON ut.Id = u.UserTypeId
-            LEFT JOIN
-            	tbl_Business_Master AS b
-            	ON b.BranchId = u.BranchId
-            LEFT JOIN
-            	tbl_Company_Master AS c
-            	ON c.Company_id = b.Company_id
-                
-            WHERE
-            	Autheticate_Id = '${Auth}'
-            `;
+                u.UserTypeId,
+                u.UserId,
+                u.UserName,
+                u.Password,
+                u.BranchId,
+                b.BranchName,
+                u.Name,
+                ut.UserType,
+                u.Autheticate_Id,
+                u.Company_Id AS Company_id,
+                c.Company_Name,
 
-            const result = await sql.query(query);
+                (
+                    SELECT 
+                        TOP (1)
+                        UserId,
+                        SessionId,
+                        InTime
+                    FROM
+                        tbl_User_Log
+                    WHERE
+                        UserId = u.UserId
+                    ORDER BY
+                        InTime DESC
+                        FOR JSON PATH
+                )  AS session
+
+            FROM tbl_Users AS u
+
+            LEFT JOIN tbl_Branch_Master AS b
+            ON b.BranchId = u.BranchId
+
+            LEFT JOIN tbl_User_Type AS ut
+            ON ut.Id = u.UserTypeId
+
+            LEFT JOIN tbl_Company_Master AS c
+            ON c.Company_id = u.Company_Id
+
+            WHERE u.Autheticate_Id = @auth AND UDel_Flag= 0`;
+
+            const request = new sql.Request();
+            request.input('auth', Auth)
+
+            const result = await request.query(query);
 
             if (result.recordset.length > 0) {
                 result.recordset[0].session = result.recordset[0].session ? JSON.parse(result.recordset[0].session) : [{
@@ -297,9 +365,10 @@ const DashboardRouter = () => {
                 return falied(res, 'User Not Found')
             }
         } catch (e) {
-            servError(e, res)
+            servError(e, res);
         }
     }
+
 
     const getEmployeeAbstract = async (req, res) => {
         const { UserId } = req.query;

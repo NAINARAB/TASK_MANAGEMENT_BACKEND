@@ -107,12 +107,12 @@ const AttendanceController = () => {
     }
 
     const closeAttendance = async (req, res) => {
-        const { Id } = req.body;
+        const { Id, Description } = req.body;
 
         try {
 
-            if (!Id) {
-                return invalidInput(res, 'Id is required')
+            if (isNaN(Id)) {
+                return invalidInput(res, 'Id is required, Description is optional')
             }
 
             const query = `
@@ -120,7 +120,8 @@ const AttendanceController = () => {
                 tbl_Attendance 
             SET
                 End_Date = @enddate,
-                Active_Status = @status
+                Active_Status = @status,
+                Description = @desc
             WHERE
                 Id = @id`;
 
@@ -128,6 +129,7 @@ const AttendanceController = () => {
             request.input('enddate', new Date())
             request.input('status', 0)
             request.input('id', Id);
+            request.input('desc', Description ? Description : '')
 
             const result = await request.query(query);
 

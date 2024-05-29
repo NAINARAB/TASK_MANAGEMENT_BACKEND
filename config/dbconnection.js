@@ -14,31 +14,31 @@ require('dotenv').config();
 //   },
 // };
 
-const config = {
-  server: "103.235.104.114",
-  database: "SMT_TASK_TEST",
-  driver: "SQL Server",
-  user: "task_admin",
-  password: "3fE26%c1g",
-  stream: false,
-  options: {
-    trustedConnection: true,
-    trustServerCertificate: true,
-  },
-};
-
 // const config = {
-//   server: process.env.SERVER,
-//   database: process.env.DATABASE,
+//   server: "103.235.104.114",
+//   database: "SMT_TASK_TEST",
 //   driver: "SQL Server",
-//   user: process.env.USER,
-//   password: process.env.PASSWORD,
+//   user: "task_admin",
+//   password: "3fE26%c1g",
 //   stream: false,
 //   options: {
 //     trustedConnection: true,
 //     trustServerCertificate: true,
 //   },
 // };
+
+const config = {
+  server: process.env.SERVER,
+  database: process.env.DATABASE,
+  driver: "SQL Server",
+  user: process.env.USER,
+  password: process.env.PASSWORD,
+  stream: false,
+  options: {
+    trustedConnection: true,
+    trustServerCertificate: true,
+  },
+};
 
 sql.connect(config, function (err) {
   if (err) {

@@ -1,7 +1,7 @@
 const sql = require("mssql");
 const { storecall } = require("../config/store");
 var CryptoJS = require("crypto-js");
-const { invalidInput, servError, dataFound, noData } = require("./res");
+const { invalidInput, servError, dataFound, noData, success, falied } = require("./res");
 
 
 function md5Hash(input) {
@@ -187,13 +187,51 @@ const userMaster = () => {
     }
   }
 
+  const changePassword = async (req, res) => {
+    const { oldPassword, newPassword, userId } = req.body;
+
+    if (!oldPassword || !newPassword || !userId) {
+        return invalidInput(res, 'oldPassword, newPassword, userId are required');
+    }
+
+    const checkPassword = `SELECT Password, UserName FROM tbl_Users WHERE UserId = @userId`;
+    const request = new sql.Request().input('userId', userId);
+
+    try {
+        const result = await request.query(checkPassword);
+
+        if (result.recordset[0] && result.recordset[0].Password === md5Hash(oldPassword)) {
+            const UserName = result.recordset[0].UserName;
+            const changePassword = new sql.Request();
+
+            changePassword.input('Mode', 2);
+            changePassword.input('UserName', UserName)
+            changePassword.input('password', md5Hash(newPassword));
+
+            const changePasswordResult = await changePassword.execute('Change_Paswword_SP');
+
+            if (changePasswordResult.rowsAffected && changePasswordResult.rowsAffected[0] > 0) {
+                success(res, 'Password Updated')
+            } else {
+                falied(res, 'Failed To Change Password')
+            }
+            
+        } else {
+            falied(res, 'Current password does not match');
+        }
+    } catch (e) {
+        servError(e, res);
+    }
+}
+
   return {
     getUsers,
     postUser,
     editUser,
     deleteUser,
     userDropdown,
-    seletUsersName
+    seletUsersName,
+    changePassword,
   }
 }
 
