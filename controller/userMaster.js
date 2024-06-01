@@ -191,38 +191,105 @@ const userMaster = () => {
     const { oldPassword, newPassword, userId } = req.body;
 
     if (!oldPassword || !newPassword || !userId) {
-        return invalidInput(res, 'oldPassword, newPassword, userId are required');
+      return invalidInput(res, 'oldPassword, newPassword, userId are required');
     }
 
     const checkPassword = `SELECT Password, UserName FROM tbl_Users WHERE UserId = @userId`;
     const request = new sql.Request().input('userId', userId);
 
     try {
-        const result = await request.query(checkPassword);
+      const result = await request.query(checkPassword);
 
-        if (result.recordset[0] && result.recordset[0].Password === md5Hash(oldPassword)) {
-            const UserName = result.recordset[0].UserName;
-            const changePassword = new sql.Request();
+      if (result.recordset[0] && result.recordset[0].Password === md5Hash(oldPassword)) {
+        const UserName = result.recordset[0].UserName;
+        const changePassword = new sql.Request();
 
-            changePassword.input('Mode', 2);
-            changePassword.input('UserName', UserName)
-            changePassword.input('password', md5Hash(newPassword));
+        changePassword.input('Mode', 2);
+        changePassword.input('UserName', UserName)
+        changePassword.input('password', md5Hash(newPassword));
 
-            const changePasswordResult = await changePassword.execute('Change_Paswword_SP');
+        const changePasswordResult = await changePassword.execute('Change_Paswword_SP');
 
-            if (changePasswordResult.rowsAffected && changePasswordResult.rowsAffected[0] > 0) {
-                success(res, 'Password Updated')
-            } else {
-                falied(res, 'Failed To Change Password')
-            }
-            
+        if (changePasswordResult.rowsAffected && changePasswordResult.rowsAffected[0] > 0) {
+          success(res, 'Password Updated')
         } else {
-            falied(res, 'Current password does not match');
+          falied(res, 'Failed To Change Password')
         }
+
+      } else {
+        falied(res, 'Current password does not match');
+      }
     } catch (e) {
-        servError(e, res);
+      servError(e, res);
     }
-}
+  }
+
+  const getAllUserDropdown = async (req, res) => {
+
+    try {
+      const result = await sql.query('SELECT UserId, Name FROM tbl_Users WHERE UDel_Flag = 0')
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } 
+    catch (e) {
+      servError(e, res);
+    }
+  }
+
+  const getEmployeeDropdown = async (req, res) => {
+
+    try {
+      const result = await sql.query('SELECT UserId, Name FROM tbl_Users WHERE UserTypeId = 3 AND UDel_Flag = 0')
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } 
+    catch (e) {
+      servError(e, res);
+    }
+
+  }
+
+  const getSalesPersonDropdown = async (req, res) => {
+
+    try {
+      const result = await sql.query('SELECT UserId, Name FROM tbl_Users WHERE UserTypeId = 6 AND UDel_Flag = 0')
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } 
+    catch (e) {
+      servError(e, res);
+    }
+    
+  }
+
+  const getAllUserCompanyBasedDropdown = async (req, res) => {
+    const { Company_id } = req.query;
+
+    if (isNaN(Company_id)) {
+      return invalidInput(res, 'Company_id is required')
+    }
+
+    try {
+      const result = await sql.query(`SELECT UserId, Name FROM tbl_Users WHERE Company_Id = '${Company_id}' AND UDel_Flag = 0`)
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } 
+    catch (e) {
+      servError(e, res);
+    }
+  }
 
   return {
     getUsers,
@@ -232,6 +299,10 @@ const userMaster = () => {
     userDropdown,
     seletUsersName,
     changePassword,
+    getAllUserDropdown,
+    getEmployeeDropdown,
+    getAllUserCompanyBasedDropdown,
+    getSalesPersonDropdown,
   }
 }
 

@@ -7,7 +7,6 @@ function md5Hash(input) {
 }
 
 const CustomerMaster = () => {
-    // CustomerRoute.get('/api/customer', authenticateToken, )
 
     const getCustomer = async (req, res) => {
         try {
@@ -39,8 +38,6 @@ const CustomerMaster = () => {
             servError(e, res);
         }
     }
-    
-    // CustomerRoute.post('/api/customer', authenticateToken, );
 
     const postCustomer = async (req, res) => {
         const { data } = req.body;
@@ -149,8 +146,6 @@ const CustomerMaster = () => {
             servError(e, res);
         }
     }
-    
-    // CustomerRoute.put('/api/customer', authenticateToken, );
 
     const editCustomer = async (req, res) => {
         const { data } = req.body;
@@ -262,8 +257,6 @@ const CustomerMaster = () => {
             servError(e, res);
         }
     }
-    
-    // ('/api/isCustomer', )
 
     const isCustomer = async (req, res) => {
         const { UserId } = req.query;

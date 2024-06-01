@@ -10,7 +10,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const query = 'SELECT Autheticate_Id FROM tbl_Users WHERE Autheticate_Id = @clientToken';
-    const request = new sql.Request(SMTERP);
+    const request = new sql.Request();
     request.input('clientToken', clientToken);
 
     const result = await request.query(query);

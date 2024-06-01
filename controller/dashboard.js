@@ -476,7 +476,7 @@ const DashboardRouter = () => {
             FROM
             	tbl_Users AS u
             	LEFT JOIN tbl_User_Type AS ut ON ut.Id = u.UserTypeId
-            	LEFT JOIN tbl_Business_Master AS b ON b.BranchId = u.BranchId
+            	LEFT JOIN tbl_Branch_Master AS b ON b.BranchId = u.BranchId
             WHERE
             	u.UserId = @user
             `;

@@ -1,6 +1,6 @@
 const sql = require("mssql");
 let { storecall } = require("../config/store");
-const resFun = require('./res')
+const { dataFound, invalidInput, falied, success, noData, servError} = require('./res')
 
 
 const companyControl = () => {
@@ -10,18 +10,21 @@ const companyControl = () => {
         try {
             const result = await storecall(query);
             if (Array.isArray(result)) {
-                return resFun.dataFound(res, result);
+                return dataFound(res, result);
             } else {
-                return resFun.noData(res)
+                return noData(res)
             }
         } catch (e) {
-            resFun.servError(e, res)
+            servError(e, res)
         }
     }
 
     const getCompany = async (req, res) => {
         const { User_Id, Company_id } = req.query;
 
+        if (isNaN(User_Id) || isNaN(Company_id)) {
+            return invalidInput(res, 'User_Id, Company_id is required');
+        }
         try {
             const request = new sql.Request();
             request.input('User_Id', User_Id)
@@ -31,14 +34,13 @@ const companyControl = () => {
             const result = await request.execute('Company_Vw');
 
             if (result.recordset.length > 0) {
-                return res.json({ success: true, message: 'data found', data: result.recordset });
+                dataFound(res, result.recordset);
             } else {
-                return res.json({ success: true, message: 'data not found, User_Id, Company_id is required', data: [] });
+                noData(res);
             }
 
         } catch (e) {
-            console.error(e);
-            res.status(500).json({ success: false, message: 'Internal Server Error', data: [] })
+            servError(e, res)
         }
     }
 
@@ -81,13 +83,12 @@ const companyControl = () => {
             const result = await request.execute('Company_SP');
 
             if (result.rowsAffected.length > 0) {
-                res.status(200).json({ success: true, message: 'Company added successfully', data: [] });
+                success(res, 'Company added successfully');
             } else {
-                res.status(400).json({ success: false, message: 'Failed to add company', data: [] });
+                falied(res, 'Failed to add company');
             }
         } catch (e) {
-            console.error(e);
-            res.status(500).json({ success: false, message: 'Internal server error', data: [] });
+            servError(e, res)
         }
     };
 
@@ -97,7 +98,7 @@ const companyControl = () => {
             Support_Number, Mail, Website, Gst_number, State_Code, State_No, Entry_By } = req.body;
 
         if (!Company_id) {
-            return resFun.invalidInput(res, 'Company_id is required');
+            return invalidInput(res, 'Company_id is required');
         }
 
         try {
@@ -134,21 +135,20 @@ const companyControl = () => {
             const result = await request.execute('Company_SP');
 
             if (result.rowsAffected.length > 0) {
-                res.status(200).json({ success: true, message: 'Changes Saved', data: [] });
+                success(res, 'Changes Saved');
             } else {
-                res.status(400).json({ success: false, message: 'Failed to save company', data: [] });
+                falied(res)
             }
         } catch (e) {
-            console.error(e);
-            res.status(500).json({ success: false, message: 'Internal server error', data: [] });
+            servError(e, res)
         }
     };
 
     const deleteCompany = async (req, res) => {
         const { Company_id } = req.body;
 
-        if (!Company_id) {
-            return res.status(400).json({ success: false, message: 'Invalid data' });
+        if (isNaN(Company_id)) {
+            return invalidInput(res, 'Company_id is required');
         }
 
         try {
@@ -185,13 +185,64 @@ const companyControl = () => {
             const result = await request.execute('Company_SP');
 
             if (result.rowsAffected.length > 0) {
-                res.status(200).json({ success: true, message: 'Company deleted', data: [] });
+                success(res, 'Company deleted')
             } else {
-                res.status(400).json({ success: false, message: 'Failed to delete company', data: [] });
+                falied(res, 'Failed to delete company')
             }
         } catch (e) {
-            console.error(e);
-            res.status(500).json({ success: false, message: 'Internal server error', data: [] });
+            servError(e, res)
+        }
+    }
+
+    // CompanyRoute.get('/api/myCompanys', );
+
+    const getMYCompanyAccess = async (req, res) => {
+        const { Auth } = req.query;
+    
+        if (!Auth) {
+            return invalidInput(res, 'Auth is required');
+        }
+    
+        try {
+            const request = new sql.Request();
+            request.input('Autheticate_Id', Auth);
+    
+            const result = await request.execute('DB_Name_Rights');
+    
+            if (result.recordset.length) {
+                return dataFound(res, result.recordset)
+            } else {
+                return falied(res, 'No permission to access the company')
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
+    
+    // CompanyRoute.post('/api/companyAuthorization', authenticateToken, ) 
+
+    const postCompanyAccess =  async (req, res) => {
+        const { UserId, Company_Id, View_Rights } = req.body;
+    
+        if (!UserId || !Company_Id || isNaN(View_Rights)) {
+            return invalidInput(res, 'UserId, Company_Id, View_Rights is required')
+        }
+    
+        try {
+            const deleteQuery = `DELETE FROM tbl_DB_Name_Rights WHERE User_Id = '${UserId}' AND Company_Id = '${Company_Id}'`;
+            await sql.query(deleteQuery);
+            const insertQuery = `INSERT INTO tbl_DB_Name_Rights (User_Id, Company_Id, View_Rights) VALUES ('${UserId}', '${Company_Id}', '${View_Rights}')`;
+            const result = await sql.query(insertQuery)
+    
+            if (result.rowsAffected[0] && result.rowsAffected[0] > 0) {
+                return dataFound(res, [], 'Changes saved')
+            } else {
+                return falied(res, 'Failed to save changes')
+            }
+            
+        } catch (e) {
+            servError(e, res)
         }
     }
 
@@ -202,7 +253,9 @@ const companyControl = () => {
         getCompany,
         postCompany,
         putCompany,
-        deleteCompany
+        deleteCompany,
+        getMYCompanyAccess,
+        postCompanyAccess,
     }
 }
 
