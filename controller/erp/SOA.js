@@ -142,7 +142,7 @@ const CustomerAPIs = () => {
         const { Company_Id, UserId, Invoice_No } = req.query;
 
         if (!Company_Id || !UserId || !Invoice_No) {
-            return res.status(400).json({ data: [], status: "Failure", message: 'Company_Id, UserId, Invoice_No is required' });
+            return res.status(400).json({ data: [], status: "Failure", message: '' });
         }
 
         try {
@@ -154,7 +154,7 @@ const CustomerAPIs = () => {
             }
 
             const Cust_Id = result.recordset[0].Cust_Id;
-            console.log(Cust_Id)
+            // console.log(Cust_Id)
 
             const request = new sql.Request();
             request.input('Cust_Id', Cust_Id);

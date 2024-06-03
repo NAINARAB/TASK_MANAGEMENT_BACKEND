@@ -11,6 +11,7 @@ require('dotenv').config();
 //   options: {
 //     trustedConnection: true,
 //     trustServerCertificate: true,
+//     requestTimeout: 60000,
 //   },
 // };
 
@@ -24,6 +25,7 @@ require('dotenv').config();
 //   options: {
 //     trustedConnection: true,
 //     trustServerCertificate: true,
+//     requestTimeout: 60000,
 //   },
 // };
 
@@ -37,6 +39,7 @@ const config = {
   options: {
     trustedConnection: true,
     trustServerCertificate: true,
+    requestTimeout: 60000,
   },
 };
 

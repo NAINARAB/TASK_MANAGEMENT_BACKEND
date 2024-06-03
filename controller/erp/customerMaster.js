@@ -280,12 +280,36 @@ const CustomerMaster = () => {
         }
     }
 
+    // get('/api/BankDetails' )
+
+    const BankDetails = async (req, res) => {
+        // const { CompanyId } = req.query;
+
+        // if (isNaN(CompanyId)) {
+        //     return invalidInput(res, 'CompanyId is required');
+        // }
+
+        try {
+            // const result = await sql.query(`SELECT * FROM tbl_Bank_Details WHERE isActive = 1 AND Company_Id = '${CompanyId}'`);
+            const result = await sql.query(`SELECT * FROM tbl_Bank_Details WHERE isActive = 1`);
+            
+            if (result.recordset.length) {
+                dataFound(res, result.recordset);
+            } else {
+                noData(res);
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
 
     return {
         getCustomer,
         postCustomer,
         editCustomer,
         isCustomer,
+        BankDetails,
     }
 }
 

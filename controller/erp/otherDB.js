@@ -16,6 +16,7 @@ const dbconnect = async (req, res, next) => {
       trustedConnection: true,
       trustServerCertificate: true,
       enableArithAbort: true,
+      requestTimeout: 60000,
     }
   };
 
