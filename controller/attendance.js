@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { dataFound, noData, servError, invalidInput } = require('../controller/res');
+const { dataFound, noData, servError, invalidInput, success, falied } = require('../controller/res');
 
 const AttendanceController = () => {
 
@@ -70,7 +70,7 @@ const AttendanceController = () => {
         }
     }
 
-    const getMyLastAttendanceOfToday = async (req, res) => {
+    const getMyLastAttendance = async (req, res) => {
         const { UserId } = req.query;
 
         if (isNaN(UserId)) {
@@ -86,8 +86,6 @@ const AttendanceController = () => {
                 tbl_Attendance 
             WHERE 
                 UserId = @user
-                AND
-                CONVERT(DATE, Start_Date) = CONVERT(DATE, GETDATE())
             ORDER BY
                 CONVERT(DATETIME, Start_Date) DESC`;
 
@@ -111,7 +109,7 @@ const AttendanceController = () => {
 
         try {
 
-            if (isNaN(Id)) {
+            if (isNaN(Id) || !Id) {
                 return invalidInput(res, 'Id is required, Description is optional')
             }
 
@@ -121,7 +119,7 @@ const AttendanceController = () => {
             SET
                 End_Date = @enddate,
                 Active_Status = @status,
-                Description = @desc
+                Work_Summary = @desc
             WHERE
                 Id = @id`;
 
@@ -190,7 +188,7 @@ const AttendanceController = () => {
     return {
         addAttendance,
         getMyTodayAttendance,
-        getMyLastAttendanceOfToday,
+        getMyLastAttendance,
         closeAttendance,
         getAttendanceHistory,
     }

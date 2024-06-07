@@ -94,7 +94,6 @@ const manualPayment = async (req, res) => {
     }
 }
 
-
 // PaymentRoute.get('/api/PaymentHistory', )
 
 const PaymentHistory = async (req, res) => {
@@ -211,7 +210,7 @@ const manualPaymentVerification = async (req, res) => {
     const { Pay_Id, description, verifiedDate, verifyStatus } = req.body;
 
     if (isNaN(Pay_Id) || !verifyStatus) {
-        return invalidInput(res, 'orderId and verifyStatus are required')
+        return invalidInput(res, 'Pay_Id and verifyStatus are required')
     }
 
     try {
@@ -223,10 +222,10 @@ const manualPaymentVerification = async (req, res) => {
                 Description = @description,
                 Verified_Date = @verifiedDate
             WHERE 
-                Order_Id = @orderId`;
+                Id = @orderId`;
 
         const request = new sql.Request();
-        request.input('orderId', orderId);
+        request.input('orderId', Pay_Id);
         request.input('verifyStatus', verifyStatus);
         request.input('description', description);
         request.input('verifiedDate', verifiedDate ? verifiedDate : new Date());

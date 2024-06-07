@@ -8,12 +8,12 @@ const DashboardRouter = () => {
     const getDashboardData = async (req, res) => {
         const { UserType, Emp_Id } = req.query;
 
-        if (UserType === undefined || !Emp_Id) {
+        if ((isNaN(UserType) && !UserType) || !Emp_Id) {
             return invalidInput(res, 'UserType, Emp_Id is required');
         }
 
         try {
-            const isAdmin = (Number(UserType) === 1 || Number(UserType) === 0);
+            const isAdmin = (Number(UserType) === 1 || Number(UserType) === 0 || Number(UserType) === 2);
 
             const adminQuery = `
                 SELECT 
@@ -533,11 +533,37 @@ const DashboardRouter = () => {
         }
     }
 
+    const getERPDashboardData = async (req, res) => {
+        const { Fromdate, Company_Id } = req.query;
+
+        if(!Fromdate || (isNaN(Company_Id) && !Company_Id)) {
+            return invalidInput(res, 'Fromdate, Company_Id is required')
+        }
+
+        try {
+            const request = new sql.Request();
+            request.input('Fromdate', Fromdate);
+            request.input('Company_Id', Company_Id);
+
+            const result = await request.execute('Dashboard_Online_Report_VW');
+
+            if (result.recordsets) {
+                dataFound(res, result.recordsets)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) { 
+            servError(e, res) 
+        }
+    }
+
     return {
         getDashboardData,
         getTallyWorkDetails,
         getUserByAuth,
         getEmployeeAbstract,
+        getERPDashboardData,
     }
 }
 

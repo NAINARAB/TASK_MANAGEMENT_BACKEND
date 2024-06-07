@@ -18,7 +18,6 @@ const DashboardController = require('../controller/dashboard');
 const NotificationController = require('../controller/notification');
 const TaskPrarameter = require('../controller/taskParameters');
 const AttendanceController = require('../controller/attendance');
-const CustomerMaster = require('../controller/erp/customerMaster')
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
@@ -26,16 +25,13 @@ router.get('/', function (req, res, next) {
 });
 
 
-router.post('/resetpasswrd', usercontroller.updatepassword)
+// router.get('/taskid', usercontroller.filterouttaskid)
+// router.get('/empid', usercontroller.filteroutempid)
 
-
-router.get('/taskid', usercontroller.filterouttaskid)
-router.get('/empid', usercontroller.filteroutempid)
-
-router.post('/notificationlist', usercontroller.notificationlist)
-router.post('/createnotification', usercontroller.createnotification)
-router.post('/projectreviewandfilter', usercontroller.projectreviewandfilter)
-router.post('/projectreviewandfilteremployeebased', usercontroller.projectreviewandfilteremployeebased)
+// router.post('/notificationlist', usercontroller.notificationlist)
+// router.post('/createnotification', usercontroller.createnotification)
+// router.post('/projectreviewandfilter', usercontroller.projectreviewandfilter)
+// router.post('/projectreviewandfilteremployeebased', usercontroller.projectreviewandfilteremployeebased)
 
 
 // Raj code 
@@ -113,8 +109,10 @@ router.post('/users', userMaster.postUser);
 router.put('/users', userMaster.editUser);
 router.delete('/users', userMaster.deleteUser);
 router.get('/userDropDown', userMaster.userDropdown);
+router.get('/users/employee/dropDown', userMaster.employeeDropDown)
 router.get('/userName', userMaster.seletUsersName);
 router.put('/users/changePassword', userMaster.changePassword)
+
 
 router.get('/baseGroup', baseGroupMaster.getBaseGroup);
 router.post('/baseGroup', baseGroupMaster.postBaseGroup);
@@ -169,9 +167,14 @@ router.post('/task/assignEmployee', TaskAssignControl.assignTaskForEmployee)
 router.put('/task/assignEmployee', TaskAssignControl.putAssignTaskForEmployee);
 router.get('/task/workedDetails', TaskAssignControl.getWorkedDetailsForTask)
 
+
+
 router.get('/dashboardData', DashboardController.getDashboardData);
 router.get('/getTallyData', DashboardController.getTallyWorkDetails);
-router.get('/employeeAbstract', DashboardController.getEmployeeAbstract)
+router.get('/employeeAbstract', DashboardController.getEmployeeAbstract);
+router.get('/erp/dashboardData', DashboardController.getERPDashboardData);
+
+
 router.get('/notification', NotificationController.getNotificartion);
 router.post('/notification', NotificationController.postNotificartion);
 
@@ -187,7 +190,7 @@ router.get('/myTodayAttendance', AttendanceController.getMyTodayAttendance);
 
 router.get('/myAttendanceHistory', AttendanceController.getAttendanceHistory);
 
-router.get('/getMyLastAttendance', AttendanceController.getMyLastAttendanceOfToday);
+router.get('/getMyLastAttendance', AttendanceController.getMyLastAttendance);
 
 
 

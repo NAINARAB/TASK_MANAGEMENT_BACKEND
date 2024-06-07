@@ -8,6 +8,7 @@ const app = express();
 
 // exist
 
+
 const indexRouter = require('./routes/index');
 
 const dotenv = require("dotenv")
@@ -27,8 +28,13 @@ app.use(cors())
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 app.use('/user/api', indexRouter);
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(path.join(__dirname, 'frontend'), 'index.html'));
+});
 
 app.use(function (req, res, next) {
   next(createError(404));
@@ -41,5 +47,7 @@ app.use(function (err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+
 
 module.exports = app;

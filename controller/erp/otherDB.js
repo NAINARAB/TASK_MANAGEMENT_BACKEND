@@ -26,13 +26,13 @@ const dbconnect = async (req, res, next) => {
 
     const result = await fetchDbdata.execute('Company_List_By_Id')
 
-    if (result.recordset[0]) {
-      config.server = result.recordset[0].IP_Address;
-      config.database = result.recordset[0].SQL_DB_Name;
-      config.user = result.recordset[0].SQL_User_Name;
-      config.password = result.recordset[0].SQL_Pass;
-      config.Tally_Company_Id = result.recordset[0].Tally_Company_Id;
-      config.Tally_Guid = result.recordset[0].Tally_Guid;
+    if (result.recordset.length > 0) {
+      config.server = result.recordset[0]?.IP_Address;
+      config.database = result.recordset[0]?.SQL_DB_Name;
+      config.user = result.recordset[0]?.SQL_User_Name;
+      config.password = result.recordset[0]?.SQL_Pass;
+      config.Tally_Company_Id = result.recordset[0]?.Tally_Company_Id;
+      config.Tally_Guid = result.recordset[0]?.Tally_Guid;
       const DYNAMICDB = new sql.ConnectionPool(config);
 
       try {

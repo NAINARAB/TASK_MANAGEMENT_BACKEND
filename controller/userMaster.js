@@ -157,6 +157,20 @@ const userMaster = () => {
     }
   };
 
+  const employeeDropDown = async (req, res) => {
+    try {
+      const result = await sql.query('SELECT UserId, Name FROM tbl_Users WHERE UserTypeId = 3 AND UDel_Flag = 0')
+
+      if (result.recordset.length > 0) {
+        dataFound(res, result.recordset)
+      } else {
+        noData(res)
+      }
+    } catch (e) {
+      servError(e, res);
+    }
+  }
+
   const seletUsersName = async (req, res) => {
     const { AllUser, BranchId } = req.query;
 
@@ -297,6 +311,7 @@ const userMaster = () => {
     editUser,
     deleteUser,
     userDropdown,
+    employeeDropDown,
     seletUsersName,
     changePassword,
     getAllUserDropdown,
