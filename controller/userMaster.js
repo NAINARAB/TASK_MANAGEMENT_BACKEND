@@ -38,10 +38,10 @@ const userMaster = () => {
   };
 
   const postUser = async (req, res) => {
-    const { Name, UserName, UserTypeId, Password, BranchId } = req.body;
+    const { Name, UserName, UserTypeId, Password, BranchId, Company_Id } = req.body;
 
-    if (!Name || !UserName || !UserTypeId || !Password || !BranchId) {
-      return res.status(400).json({ success: false, message: 'Name, UserName, UserTypeId, Password and BranchId is required', data: [] });
+    if (!Name || !UserName || !UserTypeId || !Password || !BranchId || !Company_Id) {
+      return res.status(400).json({ success: false, message: 'Name, UserName, UserTypeId, Password, BranchId and Company_Id is required', data: [] });
     }
 
     try {
@@ -58,6 +58,7 @@ const userMaster = () => {
       request.input('UserTypeId', UserTypeId);
       request.input('Password', md5Hash(Password));
       request.input('BranchId', BranchId);
+      request.input('Company_Id', Company_Id)
 
       const result = await request.execute('UsersSP');
 
@@ -74,13 +75,13 @@ const userMaster = () => {
   }
 
   const editUser = async (req, res) => {
-    const { UserId, Name, UserName, UserTypeId, Password, BranchId } = req.body;
+    const { UserId, Name, UserName, UserTypeId, Password, BranchId, Company_Id } = req.body;
 
     const isMd5Hash = /^[a-fA-F0-9]{32}$/.test(Password);
     const passwordToUse = isMd5Hash ? Password : md5Hash(Password);
 
-    if (!UserId || !Name || !UserName || !UserTypeId || !Password || !BranchId) {
-      return res.status(400).json({ success: false, message: 'UserId, Name, UserName, UserTypeId, Password and BranchId is required', data: [] });
+    if (!UserId || !Name || !UserName || !UserTypeId || !Password || !BranchId || !Company_Id) {
+      return res.status(400).json({ success: false, message: 'UserId, Name, UserName, UserTypeId, Password, BranchId, Company_Id is required', data: [] });
     }
 
     try {
@@ -97,6 +98,8 @@ const userMaster = () => {
       request.input('UserTypeId', UserTypeId);
       request.input('Password', passwordToUse);
       request.input('BranchId', BranchId);
+      request.input('Company_Id', Company_Id)
+
 
       const result = await request.execute('UsersSP');
 

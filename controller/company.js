@@ -8,9 +8,9 @@ const companyControl = () => {
     const getCompanyDrowDown = async (req, res) => {
         const query = `SELECT Company_id AS ID, Company_Name AS Name FROM tbl_Company_Master WHERE Del_Flag = 0`;
         try {
-            const result = await storecall(query);
-            if (Array.isArray(result)) {
-                return dataFound(res, result);
+            const result = await sql.query(query);
+            if (result.recordset.length > 0) {
+                return dataFound(res, result.recordset);
             } else {
                 return noData(res)
             }
@@ -194,8 +194,6 @@ const companyControl = () => {
         }
     }
 
-    // CompanyRoute.get('/api/myCompanys', );
-
     const getMYCompanyAccess = async (req, res) => {
         const { Auth } = req.query;
     
@@ -218,9 +216,6 @@ const companyControl = () => {
             servError(e, res)
         }
     }
-
-    
-    // CompanyRoute.post('/api/companyAuthorization', authenticateToken, ) 
 
     const postCompanyAccess =  async (req, res) => {
         const { UserId, Company_Id, View_Rights } = req.body;
