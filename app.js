@@ -9,7 +9,7 @@ const app = express();
 // exist
 
 
-const indexRouter = require('./routes/index');
+const indexRouter = require('./routes/index');;
 
 const dotenv = require("dotenv")
 dotenv.config()
