@@ -1,51 +1,21 @@
 const sql = require("mssql");
-
-function dataFound(res, data, message) {
-    return res.status(200).json({ data: data, message: message || 'Data Found', success: true });
-}
-
-function noData(res, message) {
-    return res.status(200).json({ data: [], success: true, message: message || 'No data' })
-}
-
-function falied(res, message) {
-    return res.status(400).json({ data: [], message: message || 'Something Went Wrong! Please Try Again', success: false })
-}
-
-function servError(e, res, message) {
-    console.log(e);
-    return res.status(500).json({ data: [], success: false, message: message || "Server error" })
-}
-
-function invalidInput(res, message) {
-    return res.status(400).json({ data: [], success: false, message: message || 'Invalid request' })
-}
-
+const { invalidInput, dataFound, noData, servError, falied, success } = require("./res");
 
 
 const branchController = () => {
 
     const getBranchDrowDown = async (req, res) => {
-        const { User_Id, Company_id } = req.query;
-
-        if (!User_Id || !Company_id) {
-            return res.status(400).json({ data: [], success: false, message: 'User_Id, Company_id are required' });
-        }
 
         try {
-            const request = new sql.Request();
-            request.input('User_Id', User_Id);
-            request.input('Company_id', Company_id);
-            const result = await request.execute('Branch_List');
-
+            const result = await sql.query('SELECT BranchId, BranchName FROM tbl_Branch_Master WHERE Del_Flag = 0');
+            
             if (result.recordset.length > 0) {
-                res.status(200).json({ data: result.recordset, success: true, message: 'data found' });
+                dataFound(res, result.recordset)
             } else {
-                res.status(200).json({ data: [], success: false, message: 'data not available' });
+                noData(res)
             }
         } catch (e) {
-            console.log(e);
-            res.status(500).json({ data: [], success: false, message: 'Internal error' });
+            servError(e, res)
         }
     }
 
@@ -53,7 +23,7 @@ const branchController = () => {
         const { User_Id, Company_id } = req.query;
 
         if (!User_Id || !Company_id) {
-            return res.status(400).json({ data: [], success: false, message: 'User_Id, Company_id are required' });
+            return invalidInput(res, 'User_Id, Company_id are required')
         }
 
         try {
@@ -64,13 +34,12 @@ const branchController = () => {
             const result = await request.execute('BranchMaster_vw');
 
             if (result.recordset.length > 0) {
-                res.status(200).json({ data: result.recordset, success: true, message: 'Row data available' });
+                dataFound(res, result.recordset)
             } else {
-                res.status(200).json({ data: [], success: false, message: 'Row data not available' });
+                noData(res)
             }
         } catch (e) {
-            console.log(e);
-            res.status(500).json({ data: [], success: false, message: 'Internal error' });
+            servError(e, res)
         }
     };
 
@@ -79,7 +48,7 @@ const branchController = () => {
             BranchAddress, E_Mail, BranchIncharge, BranchIncMobile, BranchCity, Pin_Code, State, BranchCountry, Entry_By } = req.body;
 
         if (!BranchName || !Company_id) {
-            return res.status(400).json({ data: [], success: false, message: 'Invalid data' })
+            return invalidInput(res, 'Branch_Name, Company_id is required')
         }
 
         try {
@@ -106,13 +75,12 @@ const branchController = () => {
             const result = await request.execute('Branch_Master_SP');
 
             if (result.rowsAffected[0] > 0) {
-                res.status(200).json({ success: true, message: 'Branch created successfully', data: [] });
+                success(res, 'Branch created successfully')
             } else {
-                res.status(400).json({ success: false, message: 'Failed to create branch', data: [] });
+                falied(res, 'Failed to create branch')
             }
         } catch (e) {
-            console.error(e)
-            return res.status(500).json({ success: false, message: 'Internal Server Error', data: [] });
+            servError(e, res)
         }
     }
 
@@ -121,7 +89,7 @@ const branchController = () => {
             BranchAddress, E_Mail, BranchIncharge, BranchIncMobile, BranchCity, Pin_Code, State, BranchCountry, Entry_By } = req.body;
 
         if (!BranchName || !Company_id || !BranchId) {
-            return res.status(400).json({ data: [], success: false, message: 'BranchName, BranchId, Company_id is required' })
+            return invalidInput(res, 'BranchName, BranchId, Company_id is required')
         }
 
         try {
@@ -148,13 +116,12 @@ const branchController = () => {
             const result = await request.execute('Branch_Master_SP');
 
             if (result.rowsAffected[0] > 0) {
-                res.status(200).json({ success: true, message: 'Branch updated successfully', data: [] });
+                success(res, 'Branch updated successfully')
             } else {
-                res.status(400).json({ success: false, message: 'Failed to update branch', data: [] });
+                falied(res, 'Failed to save changes')
             }
         } catch (e) {
-            console.error(e)
-            return res.status(500).json({ success: false, message: 'Internal Server Error', data: [] });
+            servError(e, res)
         }
     }
 
@@ -162,7 +129,7 @@ const branchController = () => {
         const { BranchID } = req.body;
 
         if (!BranchID) {
-            return res.status(400).json({ data: [], success: false, message: 'BranchID is required' })
+            return invalidInput(res, 'BranchID is required')
         }
 
         try {
@@ -189,13 +156,12 @@ const branchController = () => {
             const result = await request.execute('Branch_Master_SP');
 
             if (result.rowsAffected[0] > 0) {
-                res.status(200).json({ success: true, message: 'Branch deleted', data: [] });
+                success(res, 'Branch deleted')
             } else {
-                res.status(400).json({ success: false, message: 'Failed to delete branch', data: [] });
+                falied(res, 'Failed to delete branch')
             }
         } catch (e) {
-            console.error(e)
-            return res.status(500).json({ success: false, message: 'Internal Server Error', data: [] })
+            servError(e, res)
         }
     }
 

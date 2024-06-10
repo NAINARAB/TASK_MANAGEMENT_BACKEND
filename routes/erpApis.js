@@ -6,6 +6,7 @@ const CustomerMaster = require('../controller/erp/customerMaster');
 const userMaster = require('../controller/userMaster');
 const company = require('../controller/company');
 const SOA = require('../controller/erp/SOA');
+const EmployeeController = require('../controller/erp/employee')
 const dbconnect = require('../controller/erp/otherDB');
 const { manualPayment, PaymentHistory, manualPaymentVerification } = require('../controller/erp/payment');
 
@@ -26,6 +27,13 @@ ERPRouter.get('/user/CompanyBased/dropdown', userMaster.getAllUserCompanyBasedDr
 // Company Authorize
 ERPRouter.get('/company/companysAccess', company.getMYCompanyAccess);
 ERPRouter.post('/company/companysAccess', company.postCompanyAccess);
+
+// Employee Master
+
+ERPRouter.get('/emp-designation', EmployeeController.emp_designation);
+ERPRouter.get('/employee', EmployeeController.employeeGet);
+ERPRouter.post('/employee', EmployeeController.employeePost);
+ERPRouter.put('/employee', EmployeeController.employeePut);
 
 
 
