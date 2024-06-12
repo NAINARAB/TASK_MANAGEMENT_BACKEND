@@ -9,6 +9,7 @@ const SOA = require('../controller/erp/SOA');
 const EmployeeController = require('../controller/erp/employee')
 const dbconnect = require('../controller/erp/otherDB');
 const { manualPayment, PaymentHistory, manualPaymentVerification } = require('../controller/erp/payment');
+const driverActivity = require('../controller/erp/driverActivity');
 
 
 // Customers
@@ -59,7 +60,17 @@ ERPRouter.get('/PurchaseOrderReportCard', dbconnect, SOA.purchaseReport);
 // payment apis
 ERPRouter.get('/PaymentHistory', PaymentHistory);
 ERPRouter.post('/manualPayment', manualPayment);
-ERPRouter.post('/manualPaymentVerification', manualPaymentVerification)
+ERPRouter.post('/manualPaymentVerification', manualPaymentVerification);
+
+
+
+// Driver Activities
+ERPRouter.get('/driverActivities', driverActivity.getActivities);
+ERPRouter.post('/driverActivities', driverActivity.addActivities);
+ERPRouter.put('/driverActivities', driverActivity.updateActivities);
+
+ERPRouter.get('/driverActivities/locations', driverActivity.getLocationStrings);
+ERPRouter.get('/driverActivities/drivers', driverActivity.getDrivers);
 
 
 module.exports = ERPRouter;
