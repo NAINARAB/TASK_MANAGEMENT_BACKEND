@@ -1,5 +1,5 @@
 const sql = require('mssql');
-const { servError, dataFound, noData, success, falied } = require('../res')
+const { servError, dataFound, noData, success, falied, invalidInput } = require('../res')
 
 const DriverActivities = () => {
 
@@ -45,6 +45,25 @@ const DriverActivities = () => {
         } = req.body;
 
         try {
+
+            const checkExists = new sql.Request()
+                .input('EntryDate', EntryDate ? EntryDate : new Date())
+                .input('DriverName', DriverName)
+                .query(`
+                    SELECT 
+                        COUNT(DriverName) AS ExistCount 
+                    FROM 
+                        tbl_Driver_Activity 
+                    WHERE 
+                        EntryDate = @EntryDate AND DriverName = @DriverName`
+                )
+
+            const checkResult = await checkExists;
+
+            if (checkResult.recordset[0].ExistCount) {
+                return invalidInput(res, 'DriverName already exist for today\'s entry')
+            }
+
             const request = new sql.Request()
                 .input('EntryDate', EntryDate ? EntryDate : new Date())
                 .input('LocationDetails', LocationDetails)
@@ -179,7 +198,6 @@ const DriverActivities = () => {
             servError(e, res);
         }
     }
-
 
     return {
         getActivities,
