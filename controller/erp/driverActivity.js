@@ -39,9 +39,9 @@ const DriverActivities = () => {
     const addActivities = async (req, res) => {
         const { 
             EntryDate, LocationDetails, DriverName, 
-            TripOne, TripTwo, TripThree, TripFour, TripFive, 
-            OtherGodownsOne, OtherGodownsTwo, OtherGodownsThree, 
-            TransferOne, TransferTwo, TransferThree
+            TripOne, TripOneTime, TripTwo, TripTwoTime, TripThree, TripThreeTime, TripFour, TripFourTime, TripFive, TripFiveTime, 
+            OtherGodownsOne, OtherGodownsOneTime, OtherGodownsTwo, OtherGodownsTwoTime, OtherGodownsThree, OtherGodownsThreeTime,
+            TransferOne, TransferOneTime, TransferTwo, TransferTwoTime, TransferThree, TransferThreeTime
         } = req.body;
 
         try {
@@ -80,19 +80,30 @@ const DriverActivities = () => {
                 .input('TransferTwo', TransferTwo ? TransferTwo : 0)
                 .input('TransferThree', TransferThree ? TransferThree : 0)
                 .input('LastModifiedAt', new Date())
+                .input('TripOneTime', TripOneTime? TripOneTime : '00:00:00')
+                .input('TripTwoTime', TripTwoTime? TripTwoTime : '00:00:00')
+                .input('TripThreeTime', TripThreeTime? TripThreeTime : '00:00:00')
+                .input('TripFourTime', TripFourTime? TripFourTime : '00:00:00')
+                .input('TripFiveTime', TripFiveTime? TripFiveTime : '00:00:00')
+                .input('OtherGodownsOneTime', OtherGodownsOneTime? OtherGodownsOneTime : '00:00:00')
+                .input('OtherGodownsTwoTime', OtherGodownsTwoTime? OtherGodownsTwoTime : '00:00:00')
+                .input('OtherGodownsThreeTime', OtherGodownsThreeTime? OtherGodownsThreeTime : '00:00:00')
+                .input('TransferOneTime', TransferOneTime? TransferOneTime : '00:00:00')
+                .input('TransferTwoTime', TransferTwoTime? TransferTwoTime : '00:00:00')
+                .input('TransferThreeTime', TransferThreeTime? TransferThreeTime : '00:00:00')
                 .query(`
                     INSERT INTO tbl_Driver_Activity (
                         EntryDate, LocationDetails, DriverName, 
-                        TripOne, TripTwo, TripThree, TripFour, TripFive, 
-                        OtherGodownsOne, OtherGodownsTwo, OtherGodownsThree, 
-                        TransferOne, TransferTwo, TransferThree, 
+                        TripOne, TripOneTime, TripTwo, TripTwoTime, TripThree, TripThreeTime, TripFour, TripFourTime, TripFive, TripFiveTime, 
+                        OtherGodownsOne, OtherGodownsOneTime, OtherGodownsTwo, OtherGodownsTwoTime, OtherGodownsThree, OtherGodownsThreeTime,
+                        TransferOne, TransferOneTime, TransferTwo, TransferTwoTime, TransferThree, TransferThreeTime
                         LastModifiedAt
                     )
                     VALUES (
-                        @EntryDate, @LocationDetails, @DriverName,
-                        @TripOne, @TripTwo, @TripThree, @TripFour, @TripFive,
-                        @OtherGodownsOne, @OtherGodownsTwo, @OtherGodownsThree,
-                        @TransferOne, @TransferTwo, @TransferThree,
+                        @EntryDate, @LocationDetails, @DriverName, 
+                        @TripOne, @TripOneTime, @TripTwo, @TripTwoTime, @TripThree, @TripThreeTime, @TripFour, @TripFourTime, @TripFive, @TripFiveTime, 
+                        @OtherGodownsOne, @OtherGodownsOneTime, @OtherGodownsTwo, @OtherGodownsTwoTime, @OtherGodownsThree, @OtherGodownsThreeTime,
+                        @TransferOne, @TransferOneTime, @TransferTwo, @TransferTwoTime, @TransferThree, @TransferThreeTime,
                         @LastModifiedAt
                     )
                 `)
@@ -112,9 +123,9 @@ const DriverActivities = () => {
     const updateActivities = async (req, res) => {
         const { 
             Id, DriverName, 
-            TripOne, TripTwo, TripThree, TripFour, TripFive, 
-            OtherGodownsOne, OtherGodownsTwo, OtherGodownsThree, 
-            TransferOne, TransferTwo, TransferThree
+            TripOne, TripOneTime, TripTwo, TripTwoTime, TripThree, TripThreeTime, TripFour, TripFourTime, TripFive, TripFiveTime, 
+            OtherGodownsOne, OtherGodownsOneTime, OtherGodownsTwo, OtherGodownsTwoTime, OtherGodownsThree, OtherGodownsThreeTime,
+            TransferOne, TransferOneTime, TransferTwo, TransferTwoTime, TransferThree, TransferThreeTime
         } = req.body;
 
         try {
@@ -132,22 +143,44 @@ const DriverActivities = () => {
                 .input('TransferOne', TransferOne ? TransferOne : 0)
                 .input('TransferTwo', TransferTwo ? TransferTwo : 0)
                 .input('TransferThree', TransferThree ? TransferThree : 0)
+                .input('TripOneTime', TripOneTime ? TripOneTime : '00:00:00')
+                .input('TripTwoTime', TripTwoTime ? TripTwoTime : '00:00:00')
+                .input('TripThreeTime', TripThreeTime ? TripThreeTime : '00:00:00')
+                .input('TripFourTime', TripFourTime ? TripFourTime : '00:00:00')
+                .input('TripFiveTime', TripFiveTime ? TripFiveTime : '00:00:00')
+                .input('OtherGodownsOneTime', OtherGodownsOneTime ? OtherGodownsOneTime : '00:00:00')
+                .input('OtherGodownsTwoTime', OtherGodownsTwoTime ? OtherGodownsTwoTime : '00:00:00')
+                .input('OtherGodownsThreeTime', OtherGodownsThreeTime ? OtherGodownsThreeTime : '00:00:00')
+                .input('TransferOneTime', TransferOneTime ? TransferOneTime : '00:00:00')
+                .input('TransferTwoTime', TransferTwoTime ? TransferTwoTime : '00:00:00')
+                .input('TransferThreeTime', TransferThreeTime ? TransferThreeTime : '00:00:00')
                 .input('LastModifiedAt', new Date())
                 .query(`
                     UPDATE tbl_Driver_Activity 
                     SET 
-                        DriverName = @DriverName, 
-                        TripOne = @TripOne, 
-                        TripTwo = @TripTwo, 
-                        TripThree = @TripThree, 
-                        TripFour = @TripFour, 
-                        TripFive = @TripFive, 
-                        OtherGodownsOne = @OtherGodownsOne, 
-                        OtherGodownsTwo = @OtherGodownsTwo, 
-                        OtherGodownsThree = @OtherGodownsThree, 
-                        TransferOne = @TransferOne, 
-                        TransferTwo = @TransferTwo, 
-                        TransferThree = @TransferThree, 
+                        DriverName = @DriverName,
+                        TripOne = @TripOne,
+                        TripTwo = @TripTwo,
+                        TripThree = @TripThree,
+                        TripFour = @TripFour,
+                        TripFive = @TripFive,
+                        OtherGodownsOne = @OtherGodownsOne,
+                        OtherGodownsTwo = @OtherGodownsTwo,
+                        OtherGodownsThree = @OtherGodownsThree,
+                        TransferOne = @TransferOne,
+                        TransferTwo = @TransferTwo,
+                        TransferThree = @TransferThree,
+                        TripOneTime = @TripOneTime,
+                        TripTwoTime = @TripTwoTime,
+                        TripThreeTime = @TripThreeTime,
+                        TripFourTime = @TripFourTime,
+                        TripFiveTime = @TripFiveTime,
+                        OtherGodownsOneTime = @OtherGodownsOneTime,
+                        OtherGodownsTwoTime = @OtherGodownsTwoTime,
+                        OtherGodownsThreeTime = @OtherGodownsThreeTime,
+                        TransferOneTime = @TransferOneTime,
+                        TransferTwoTime = @TransferTwoTime,
+                        TransferThreeTime = @TransferThreeTime,
                         LastModifiedAt = @LastModifiedAt
                     WHERE
                         Id = @Id
