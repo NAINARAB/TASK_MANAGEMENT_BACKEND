@@ -7,6 +7,10 @@ const newDriverActivities = () => {
     const getDriverActivities = async (req, res) => {
         const { reqDate, reqLocation } = req.query;
 
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required')
+        }
+
         try {
             const request = new sql.Request()
                 .input('reqDate', reqDate ? reqDate : new Date())
@@ -14,54 +18,94 @@ const newDriverActivities = () => {
                 .query(`
                     SELECT 
                         DISTINCT da.DriverName,
+                        
                         COALESCE((
                             SELECT 
                                 DISTINCT tc.TripCategory,
+
                                 COALESCE((
-                                    SELECT 
-                                        *
-                                    FROM 
-                                        tbl_Driver_Activities
+                                    SELECT
+										DISTINCT t.TripNumber,
+
+										COALESCE((
+											SELECT 
+												*
+											FROM 
+												tbl_Driver_Activities
+											WHERE 
+												DriverName = da.DriverName
+												AND
+												TripCategory = tc.TripCategory
+                                                AND
+                                                TripNumber = t.TripNumber
+												AND
+												ActivityDate = @reqDate
+												AND
+												LocationDetails = @reqLocation
+											ORDER BY
+												CONVERT(TIME, EventTime)
+											FOR JSON PATH
+										), '[]') AS Trips
+
+									FROM
+										tbl_Driver_Activities AS t
                                     WHERE 
-                                        DriverName = da.DriverName
+                                        t.TripCategory = tc.TripCategory
                                         AND
-                                        TripCategory = tc.TripCategory
+                                        t.ActivityDate = @reqDate
                                         AND
-                                        LocationDetails = @reqLocation
-                                        AND
-                                        ActivityDate = @reqDate
+                                        t.LocationDetails = @reqLocation
                                     ORDER BY
-                                        CONVERT(TIME, EventTime)
+                                        t.TripNumber
                                     FOR JSON PATH
                                 ), '[]') AS TripDetails
+
                             FROM
-                                tbl_Driver_Activities AS tc 
+                                tbl_Driver_Activities AS tc
+                            WHERE
+                                tc.ActivityDate = @reqDate
+                                AND
+                                tc.LocationDetails = @reqLocation 
                             FOR JSON PATH
                         ), '[]') AS LocationGroup
+
                     FROM 
                         tbl_Driver_Activities AS da
                     WHERE
                         da.ActivityDate = @reqDate
-                        ${reqLocation ? `
                         AND 
-                        da.LocationDetails = @reqLocation` : ''}
+                        da.LocationDetails = @reqLocation
                     `)
             
             const result = await request;
 
             if (result.recordset.length > 0) {
-                const levelOneParse = result.recordset.map(o => ({
+
+                const levelOneParse = result.recordset?.map(o => ({
                     ...o,
                     LocationGroup: JSON.parse(o?.LocationGroup)
                 }))
-                const levelTowParse = levelOneParse.map(o => ({
+
+                const levelTowParse = levelOneParse?.map(o => ({
                     ...o,
                     LocationGroup: o?.LocationGroup?.map(oo => ({
                         ...oo,
                         TripDetails: JSON.parse(oo?.TripDetails)
                     }))
                 }))
-                dataFound(res, levelTowParse)
+
+                const levelThreeParse = levelTowParse?.map(o => ({
+                    ...o,
+                    LocationGroup: o?.LocationGroup?.map(oo => ({
+                        ...oo,
+                        TripDetails: oo?.TripDetails?.map(ooo => ({
+                            ...ooo,
+                            Trips: JSON.parse(ooo?.Trips)
+                        }))
+                    }))
+                }))
+
+                dataFound(res, levelThreeParse)
             } else {
                 noData(res)
             }
