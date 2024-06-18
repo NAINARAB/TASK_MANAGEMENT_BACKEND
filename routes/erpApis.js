@@ -9,7 +9,6 @@ const SOA = require('../controller/erp/SOA');
 const EmployeeController = require('../controller/erp/employee')
 const dbconnect = require('../controller/erp/otherDB');
 const { manualPayment, PaymentHistory, manualPaymentVerification } = require('../controller/erp/payment');
-const driverActivity = require('../controller/erp/driverActivity');
 const driverActivities = require('../controller/erp/driverActivities')
 const GodownActivity = require('../controller/erp/godownActivity');
 

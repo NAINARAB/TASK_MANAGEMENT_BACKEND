@@ -30,6 +30,8 @@ const newDriverActivities = () => {
                                         LocationDetails = @reqLocation
                                         AND
                                         ActivityDate = @reqDate
+                                    ORDER BY
+                                        CONVERT(TIME, EventTime)
                                     FOR JSON PATH
                                 ), '[]') AS TripDetails
                             FROM
@@ -69,10 +71,10 @@ const newDriverActivities = () => {
     }
 
     const addDriverActivities = async (req, res) => {
-        const { ActivityDate, LocationDetails, DriverName, TripCategory, TonnageValue, EventTime, CreatedBy } = req.body;
+        const { ActivityDate, LocationDetails, DriverName, TripCategory, TonnageValue, EventTime, TripNumber, CreatedBy } = req.body;
 
         if (!DriverName || !LocationDetails || !TripCategory || !TonnageValue || !EventTime) {
-            return invalidInput(res, 'DriverName, LocationDetails, TripCategory, TonnageValue, EventTime is required');
+            return invalidInput(res, 'DriverName, LocationDetails, TripCategory, TonnageValue, EventTime, TripNumber is required');
         }
 
         try {
@@ -83,13 +85,14 @@ const newDriverActivities = () => {
                 .input('TripCategory', TripCategory)
                 .input('TonnageValue', TonnageValue)
                 .input('EventTime', EventTime)
+                .input('TripNumber', TripNumber ? TripNumber : 0)
                 .input('CreatedAt', new Date())
                 .input('CreatedBy', CreatedBy)
                 .query(`
                     INSERT INTO tbl_Driver_Activities
-                        (ActivityDate, LocationDetails, DriverName, TripCategory, TonnageValue, EventTime, CreatedAt, CreatedBy)
+                        (ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, CreatedAt, CreatedBy)
                     VALUES
-                        (@ActivityDate, @LocationDetails, @DriverName, @TripCategory, @TonnageValue, @EventTime, @CreatedAt, @CreatedBy)`
+                        (@ActivityDate, @LocationDetails, @DriverName, @TripCategory, @TripNumber, @TonnageValue, @EventTime, @CreatedAt, @CreatedBy)`
                 )
 
             const result = await request;
@@ -105,9 +108,8 @@ const newDriverActivities = () => {
         }
     }
 
-
     const editDriverActivity = async (req, res) => {
-        const { Id, ActivityDate, LocationDetails, DriverName, TripCategory, TonnageValue, EventTime, CreatedBy } = req.body;
+        const { Id, ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, CreatedBy } = req.body;
         
         try {
             const request = new sql.Request()
@@ -116,6 +118,7 @@ const newDriverActivities = () => {
                 .input('LocationDetails', LocationDetails)
                 .input('DriverName', DriverName)
                 .input('TripCategory', TripCategory)
+                .input('TripNumber', TripNumber)
                 .input('TonnageValue', TonnageValue)
                 .input('EventTime', EventTime)
                 .input('CreatedBy', CreatedBy)
@@ -126,6 +129,7 @@ const newDriverActivities = () => {
                         LocationDetails = @LocationDetails,
                         DriverName = @DriverName,
                         TripCategory = @TripCategory,
+                        TripNumber = @TripNumber,
                         TonnageValue = @TonnageValue,
                         EventTime = @EventTime,
                         CreatedBy = @CreatedBy

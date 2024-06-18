@@ -5,8 +5,8 @@ const http = require('http');
 const port = normalizePort(process.env.PORT || '7001');
 const server = http.createServer(app);
 app.set('port', port);
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ server });
+// const WebSocket = require('ws');
+// const wss = new WebSocket.Server({ server });
 
 
 server.listen(port);
@@ -14,19 +14,19 @@ server.on('error', onError);
 server.on('listening', onListening);
 console.log(`http://localhost:${port}`)
 
-// my c
+// // my c
 
-wss.on('connection', (ws) => {
-  console.log('Client connected to WebSocket');
+// wss.on('connection', (ws) => {
+//   console.log('Client connected to WebSocket');
 
-  ws.on('message', (message) => {
-    console.log('Received message:', message);
-  });
+//   ws.on('message', (message) => {
+//     console.log('Received message:', message);
+//   });
 
-  ws.send('Hello, client!');
-});
+//   ws.send('Hello, client!');
+// });
 
-// my ce
+// // my ce
 
 
 function normalizePort(val) {
