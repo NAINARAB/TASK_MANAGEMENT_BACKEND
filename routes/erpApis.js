@@ -11,6 +11,7 @@ const dbconnect = require('../controller/erp/otherDB');
 const { manualPayment, PaymentHistory, manualPaymentVerification } = require('../controller/erp/payment');
 const driverActivities = require('../controller/erp/driverActivities')
 const GodownActivity = require('../controller/erp/godownActivity');
+const DeliveryActivity = require('../controller/erp/deliveryActivity');
 
 
 // Customers
@@ -72,12 +73,16 @@ ERPRouter.post('/driverActivities', driverActivities.addDriverActivities);
 ERPRouter.put('/driverActivities', driverActivities.editDriverActivity);
 
 
-
-
 // Godown Activities
 ERPRouter.get('/godownActivities', GodownActivity.getGodownActivity)
 ERPRouter.post('/godownActivities', GodownActivity.postGWActivity)
 ERPRouter.put('/godownActivities', GodownActivity.updateGWActivity)
+
+
+// Delivery Activities
+ERPRouter.get('/deliveryActivities', DeliveryActivity.getDeliveryReport)
+ERPRouter.post('/deliveryActivities', DeliveryActivity.addDeliveryReport)
+ERPRouter.put('/deliveryActivities', DeliveryActivity.updateDeliveryActivity)
 
 
 module.exports = ERPRouter;

@@ -32,6 +32,24 @@ const resFun = () => {
     return !isNaN(timestamp);
   }
 
+  const LocalDateTime = () => {
+    const now = new Date();
+    const utcTime = now.getTime();
+    const istOffsetInMilliseconds = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(utcTime + istOffsetInMilliseconds);
+    const localISOTime = istTime.toISOString();
+
+    return localISOTime;
+  };
+
+  function getCurrentTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
   return {
     success,
     dataFound,
@@ -39,7 +57,9 @@ const resFun = () => {
     falied,
     servError,
     invalidInput,
-    isValidDate
+    isValidDate,
+    LocalDateTime,
+    getCurrentTime
   }
 }
 

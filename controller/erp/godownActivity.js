@@ -1,5 +1,5 @@
 const sql = require('mssql');
-const { servError, dataFound, noData, success, falied, invalidInput } = require('../res')
+const { servError, dataFound, noData, success, falied, invalidInput, LocalDateTime } = require('../res')
 
 
 const GodownActivity = () => {
@@ -79,7 +79,7 @@ const GodownActivity = () => {
 
         try {
             const request = new sql.Request()
-                .input('EntryDate', EntryDate ? EntryDate : new Date())
+                .input('EntryDate', EntryDate ? EntryDate : LocalDateTime())
                 .input('LocationDetails', LocationDetails)
                 .input('Purchase', Purchase ? Purchase : 0)
                 .input('OtherGodown', OtherGodown ? OtherGodown : 0)
@@ -91,7 +91,7 @@ const GodownActivity = () => {
                 .input('DDSales', DDSales ? DDSales : 0)
                 .input('SalesTransfer', SalesTransfer ? SalesTransfer : 0)
                 .input('SalesOtherGodown', SalesOtherGodown ? SalesOtherGodown : 0)
-                .input('EntryAt', new Date())
+                .input('EntryAt', LocalDateTime())
                 .input('EntryBy', EntryBy)
                 .query(
                     `INSERT INTO tbl_GodownActivity (
@@ -137,7 +137,7 @@ const GodownActivity = () => {
                 .input('DDSales', DDSales ? DDSales : 0)
                 .input('SalesTransfer', SalesTransfer ? SalesTransfer : 0)
                 .input('SalesOtherGodown', SalesOtherGodown ? SalesOtherGodown : 0)
-                .input('EntryAt', new Date())
+                .input('EntryAt', LocalDateTime())
                 .input('EntryBy', EntryBy)
                 .query(
                     `UPDATE 
@@ -174,11 +174,64 @@ const GodownActivity = () => {
         }
     }
 
+    const getDayAbstract = async (req, res) => {
+        const { Fromdate, Todate, LocationDetails } = req.query;
+
+        if (!LocationDetails) {
+            return invalidInput(res, 'LocationDetails is required');
+        }
+
+        try {
+            const request = new sql.Request()
+                .input('Fromdate', Fromdate)
+                .input('Todate', Todate)
+                .input('LocationDetails', LocationDetails)
+                .query(`
+                    SELECT
+                        EntryDate,
+                        (Sum(Purchase) + Sum(OtherGodown) + Sum(PurchaseTransfer)) AS PurchaseTotal,
+                        (Sum(LorryShed) + Sum(VandiVarum) + Sum(DDSales) + Sum(SalesTransfer) + Sum(SalesOtherGodown)) AS SalesTotal,
+                        (Sum(LorryShed) + Sum(VandiVarum) + Sum(DDSales) + Sum(SalesTransfer)) AS SalesOnlyTotal,
+                        Sum(Purchase) AS Purchase,
+                        Sum(OtherGodown) AS OtherGodown,
+                        Sum(PurchaseTransfer) AS PurchaseTransfer,
+                        Sum(LorryShed) AS LorryShed,
+                        Sum(VandiVarum) AS VandiVarum,
+                        Sum(DDSales) AS DDSales,
+                        Sum(SalesTransfer) AS SalesTransfer,
+                        Sum(Handle) AS Handle,
+                        Sum(WGChecking) AS WGChecking,
+                        (Sum(Handle) + Sum(WGChecking)) AS HandlingTotal
+                    FROM
+                        tbl_GodownActivity
+                    WHERE
+                    	CONVERT(DATE, EntryDate) >= CONVERT(DATE, @Fromdate)
+                        AND
+                        CONVERT(DATE, EntryDate) <= CONVERT(DATE, @Todate)
+                        AND
+                        LocationDetails = @LocationDetails
+                    GROUP BY
+                        EntryDate
+                    `)
+
+            const result = await request;
+
+            if (result.recordset.length) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
 
     return {
         getGodownActivity,
         postGWActivity,
         updateGWActivity,
+        getDayAbstract,
     }
 
 }
