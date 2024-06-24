@@ -68,6 +68,7 @@ ERPRouter.post('/manualPaymentVerification', manualPaymentVerification);
 
 // Driver Activities
 ERPRouter.get('/driverActivities', driverActivities.getDriverActivities);
+ERPRouter.get('/driverActivities/tripBased', driverActivities.TripBasedReport);
 ERPRouter.get('/driverActivities/drivers', driverActivities.getDrivers);
 ERPRouter.post('/driverActivities', driverActivities.addDriverActivities);
 ERPRouter.put('/driverActivities', driverActivities.editDriverActivity);
