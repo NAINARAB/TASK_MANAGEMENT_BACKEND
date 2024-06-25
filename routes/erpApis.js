@@ -12,6 +12,7 @@ const { manualPayment, PaymentHistory, manualPaymentVerification } = require('..
 const driverActivities = require('../controller/erp/driverActivities')
 const GodownActivity = require('../controller/erp/godownActivity');
 const DeliveryActivity = require('../controller/erp/deliveryActivity');
+const StaffActivity = require('../controller/erp/staffActivity')
 
 
 // Customers
@@ -84,6 +85,14 @@ ERPRouter.put('/godownActivities', GodownActivity.updateGWActivity)
 ERPRouter.get('/deliveryActivities', DeliveryActivity.getDeliveryReport)
 ERPRouter.post('/deliveryActivities', DeliveryActivity.addDeliveryReport)
 ERPRouter.put('/deliveryActivities', DeliveryActivity.updateDeliveryActivity)
+
+
+// Staff Activities
+ERPRouter.get('/staffActivities', StaffActivity.getStaffActivity)
+ERPRouter.get('/staffActivities/staffs', StaffActivity.getUniqueStaff)
+ERPRouter.post('/staffActivities', StaffActivity.postStaffActivity)
+ERPRouter.put('/staffActivities', StaffActivity.editStaffActivity)
+
 
 
 module.exports = ERPRouter;
