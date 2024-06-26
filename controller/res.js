@@ -50,6 +50,10 @@ const resFun = () => {
     return `${hours}:${minutes}:${seconds}`;
   }
 
+  const checkIsNumber = (num) => {
+    return num ? isNaN(num) ? false : true : false
+  } 
+
   return {
     success,
     dataFound,
@@ -59,7 +63,8 @@ const resFun = () => {
     invalidInput,
     isValidDate,
     LocalDateTime,
-    getCurrentTime
+    getCurrentTime,
+    checkIsNumber
   }
 }
 

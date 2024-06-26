@@ -32,9 +32,13 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 
 app.use('/user/api', indexRouter);
 
+const machineOutern = path.join(__dirname, 'controller', 'erp', 'fileHandling', 'uploads', 'machineOutern');
+app.use('/imageURL/machineOutern', express.static(machineOutern));
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(path.join(__dirname, 'frontend'), 'index.html'));
 });
+
 
 app.use(function (req, res, next) {
   next(createError(404));

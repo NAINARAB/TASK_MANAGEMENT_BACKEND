@@ -1,5 +1,6 @@
 const express = require('express');
 const ERPRouter = express.Router();
+const path = require('path');
 
 
 const CustomerMaster = require('../controller/erp/customerMaster');
@@ -12,7 +13,9 @@ const { manualPayment, PaymentHistory, manualPaymentVerification } = require('..
 const driverActivities = require('../controller/erp/driverActivities')
 const GodownActivity = require('../controller/erp/godownActivity');
 const DeliveryActivity = require('../controller/erp/deliveryActivity');
-const StaffActivity = require('../controller/erp/staffActivity')
+const StaffActivity = require('../controller/erp/staffActivity');
+const { MachineOuternControll, getMachineOuternController } = require('../controller/erp/machineOutrn');
+// const getImagesMiddleware = require('../controller/erp/fileHandling/getImagesMiddleware');
 
 
 // Customers
@@ -92,6 +95,11 @@ ERPRouter.get('/staffActivities', StaffActivity.getStaffActivity)
 ERPRouter.get('/staffActivities/staffs', StaffActivity.getUniqueStaff)
 ERPRouter.post('/staffActivities', StaffActivity.postStaffActivity)
 ERPRouter.put('/staffActivities', StaffActivity.editStaffActivity)
+
+
+// Machine Outern Activities
+ERPRouter.get('/machineOutern', getMachineOuternController)
+ERPRouter.post('/machineOutern', MachineOuternControll)
 
 
 
