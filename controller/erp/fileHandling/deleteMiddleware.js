@@ -3,7 +3,7 @@ const path = require('path');
 
 
 const isImageFile = (file) => {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff'];
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'];
     const fileExtension = path.extname(file).toLowerCase();
     return imageExtensions.includes(fileExtension);
 };

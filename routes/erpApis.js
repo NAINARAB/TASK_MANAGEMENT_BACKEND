@@ -15,6 +15,7 @@ const GodownActivity = require('../controller/erp/godownActivity');
 const DeliveryActivity = require('../controller/erp/deliveryActivity');
 const StaffActivity = require('../controller/erp/staffActivity');
 const { MachineOuternControll, getMachineOuternController } = require('../controller/erp/machineOutrn');
+const { getInwardActivity, InwardActivityControll } = require('../controller/erp/inwardActivity')
 // const getImagesMiddleware = require('../controller/erp/fileHandling/getImagesMiddleware');
 
 
@@ -101,6 +102,10 @@ ERPRouter.put('/staffActivities', StaffActivity.editStaffActivity)
 ERPRouter.get('/machineOutern', getMachineOuternController)
 ERPRouter.post('/machineOutern', MachineOuternControll)
 
+
+// Inward Activity
+ERPRouter.get('/inwardActivity', getInwardActivity)
+ERPRouter.post('/inwardActivity', InwardActivityControll)
 
 
 module.exports = ERPRouter;

@@ -35,6 +35,9 @@ app.use('/user/api', indexRouter);
 const machineOutern = path.join(__dirname, 'controller', 'erp', 'fileHandling', 'uploads', 'machineOutern');
 app.use('/imageURL/machineOutern', express.static(machineOutern));
 
+const inwardActivity = path.join(__dirname, 'controller', 'erp', 'fileHandling', 'uploads', 'inwardActivity');
+app.use('/imageURL/inwardActivity', express.static(inwardActivity));
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(path.join(__dirname, 'frontend'), 'index.html'));
 });
