@@ -251,6 +251,8 @@ const newDriverActivities = () => {
                     			t.LocationDetails = @location
                     			AND
                     			t.ActivityDate = @date
+                            ORDER BY
+                                t.TripNumber
                     		FOR JSON PATH
                     	), '[]') AS Trips
                     FROM 

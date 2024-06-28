@@ -51,7 +51,7 @@ const GodownActivity = () => {
                         AND
                         ud.LocationDetails = @LocationDetails
                     ORDER BY
-                        CONVERT(DATE, ud.EntryDate)
+                        CONVERT(DATE, ud.EntryDate) DESC
                     `)
 
             const result = await request;
