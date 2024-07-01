@@ -160,11 +160,99 @@ const StaffActivityControll = () => {
         try {
             const request = new sql.Request()
                 .query(`SELECT DISTINCT StaffName FROM tbl_StaffActivity`)
-            
+
             const result = await request;
 
             if (result.recordset.length) {
                 dataFound(res, result.recordset);
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
+    const getStaffBased = async (req, res) => {
+        const { reqDate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required');
+        }
+
+        try {
+            const request = new sql.Request()
+                .input('date', reqDate ? new Date(reqDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+                .input('location', reqLocation)
+                .query(`
+                    SELECT
+                    	DISTINCT us.StaffName,
+                    	COALESCE((
+                    		SELECT 
+                        		DISTINCT uc.Category,
+                    			COALESCE((
+                    				SELECT
+                    					TOP (1) *
+                    				FROM
+                    					tbl_StaffActivity
+                    				WHERE
+                    					us.EntryDate = @date
+                    					AND
+                    					us.LocationDetails = @location
+                    					AND
+                    					Category = uc.Category
+                    					AND
+                    					StaffName = us.StaffName
+                    					AND EntryTime IN (
+                    						SELECT 
+                    							Max(EntryTime) as EntryTime 
+                    						FROM 
+                    							tbl_StaffActivity 
+                    						WHERE 
+                    							EntryDate = @date
+                    							AND
+                    							LocationDetails = @location
+                    							AND
+                    							Category = uc.Category
+                    							AND
+                    							StaffName = us.StaffName
+                    					)
+                    				FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+                    			), '{}') AS StaffDetails
+                    		FROM
+                        		tbl_StaffActivity AS uc
+                    		WHERE
+                    			uc.EntryDate = @date
+                    			AND
+                    			uc.LocationDetails = @location
+                    		ORDER BY
+                    			uc.Category
+                        FOR JSON PATH
+                    	), '[]') AS Categories
+                    FROM
+                    	tbl_StaffActivity AS us
+                    WHERE
+                    	us.EntryDate = @date
+                    	AND
+                    	us.LocationDetails = @location
+                    `)
+            const result = await request;
+
+            if (result.recordset.length > 0) {
+                const levelOneParse = result.recordset?.map(o => ({
+                    ...o,
+                    Categories: JSON.parse(o?.Categories)
+                }))
+
+                const levelTowParse = levelOneParse?.map(o => ({
+                    ...o,
+                    Categories: o?.Categories?.map(oo => ({
+                        ...oo,
+                        StaffDetails: JSON.parse(oo?.StaffDetails)
+                    }))
+                }))
+                dataFound(res, levelTowParse)
+
             } else {
                 noData(res)
             }
@@ -178,7 +266,8 @@ const StaffActivityControll = () => {
         getStaffActivity,
         postStaffActivity,
         editStaffActivity,
-        getUniqueStaff
+        getUniqueStaff,
+        getStaffBased
     }
 
 }

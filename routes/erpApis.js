@@ -94,6 +94,7 @@ ERPRouter.put('/deliveryActivities', DeliveryActivity.updateDeliveryActivity)
 
 // Staff Activities
 ERPRouter.get('/staffActivities', StaffActivity.getStaffActivity)
+ERPRouter.get('/staffActivities/staffBased', StaffActivity.getStaffBased);
 ERPRouter.get('/staffActivities/staffs', StaffActivity.getUniqueStaff)
 ERPRouter.post('/staffActivities', StaffActivity.postStaffActivity)
 ERPRouter.put('/staffActivities', StaffActivity.editStaffActivity)
