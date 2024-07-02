@@ -146,7 +146,7 @@ const AttendanceController = () => {
         const { From, To, UserId } = req.query;
 
         if (!From || !To) {
-            return invalidInput(res, 'From and To is required')
+            return invalidInput(res, 'From and To is required');
         }
 
         try {

@@ -226,12 +226,58 @@ const GodownActivity = () => {
         }
     }
 
+    const getGodownAbstract = async (req, res) => {
+
+        const { reqDate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'LocationDetails is required');
+        }
+
+        try {
+            const request = new sql.Request()
+                .input('reqDate', reqDate ? reqDate : new Date())
+                .input('reqLocation', reqLocation)
+                .query(`
+                    SELECT 
+                        TOP (1) 
+                        EntryDate,                        
+                        (Purchase + OtherGodown + PurchaseTransfer) AS PurchaseTotal,
+                        (LorryShed + VandiVarum + DDSales + SalesTransfer + SalesOtherGodown) AS SalesTotal,
+                        (Handle + WGChecking) AS ManagementTotal,
+                        EntryAt
+                    FROM 
+                        tbl_GodownActivity
+                    WHERE 
+                        CONVERT(DATE, EntryDate) = CONVERT(DATE, @reqDate)
+                        AND
+                        LocationDetails = @reqLocation
+                    ORDER BY
+                        CONVERT(DATETIME, EntryAt) DESC
+                    `)
+
+            const result = await request;
+
+            if (result.recordset.length) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
+
+
+
 
     return {
         getGodownActivity,
         postGWActivity,
         updateGWActivity,
         getDayAbstract,
+        getGodownAbstract,
     }
 
 }

@@ -75,6 +75,7 @@ ERPRouter.post('/manualPaymentVerification', manualPaymentVerification);
 // Driver Activities
 ERPRouter.get('/driverActivities', driverActivities.getDriverActivities);
 ERPRouter.get('/driverActivities/tripBased', driverActivities.TripBasedReport);
+ERPRouter.get('/driverActivities/timeBased', driverActivities.timeBasedReport);
 ERPRouter.get('/driverActivities/drivers', driverActivities.getDrivers);
 ERPRouter.post('/driverActivities', driverActivities.addDriverActivities);
 ERPRouter.put('/driverActivities', driverActivities.editDriverActivity);
@@ -82,12 +83,14 @@ ERPRouter.put('/driverActivities', driverActivities.editDriverActivity);
 
 // Godown Activities
 ERPRouter.get('/godownActivities', GodownActivity.getGodownActivity)
+ERPRouter.get('/godownActivities/abstract', GodownActivity.getGodownAbstract)
 ERPRouter.post('/godownActivities', GodownActivity.postGWActivity)
 ERPRouter.put('/godownActivities', GodownActivity.updateGWActivity)
 
 
 // Delivery Activities
 ERPRouter.get('/deliveryActivities', DeliveryActivity.getDeliveryReport)
+ERPRouter.get('/deliveryActivities/abstract', DeliveryActivity.getLastDelivery)
 ERPRouter.post('/deliveryActivities', DeliveryActivity.addDeliveryReport)
 ERPRouter.put('/deliveryActivities', DeliveryActivity.updateDeliveryActivity)
 

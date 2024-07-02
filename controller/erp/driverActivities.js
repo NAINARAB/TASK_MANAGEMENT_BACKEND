@@ -76,7 +76,7 @@ const newDriverActivities = () => {
                         AND 
                         da.LocationDetails = @reqLocation
                     `)
-            
+
             const result = await request;
 
             if (result.recordset.length > 0) {
@@ -154,7 +154,7 @@ const newDriverActivities = () => {
 
     const editDriverActivity = async (req, res) => {
         const { Id, ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, CreatedBy } = req.body;
-        
+
         try {
             const request = new sql.Request()
                 .input('Id', Id)
@@ -196,7 +196,7 @@ const newDriverActivities = () => {
         try {
             const request = new sql.Request()
                 .query(`SELECT DISTINCT DriverName FROM tbl_Driver_Activities`)
-            
+
             const result = await request;
 
             if (result.recordset.length) {
@@ -261,7 +261,7 @@ const newDriverActivities = () => {
                     	ud.LocationDetails = @location
                     	AND
                     	ud.ActivityDate = @date`)
-            
+
             const result = await request;
 
             if (result.recordset.length) {
@@ -286,13 +286,65 @@ const newDriverActivities = () => {
         }
     }
 
+    const timeBasedReport = async (req, res) => {
+        const { reqDate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required');
+        }
+
+        try {
+            const request = new sql.Request()
+                .input('reqDate', reqDate ? reqDate : new Date())
+                .input('reqLocation', reqLocation)
+                .query(`
+                    SELECT
+                    	DISTINCT EventTime,
+                    	COALESCE((
+                    		SELECT
+                    			*
+                    		FROM
+                    			tbl_Driver_Activities
+                    		WHERE
+                    			LocationDetails = @reqLocation
+                    			AND
+                    			ActivityDate = @reqDate
+                    			AND
+                    			EventTime = ut.EventTime
+                    		FOR JSON PATH
+                    	), '[]') AS Trips
+                    FROM
+                    	tbl_Driver_Activities AS ut
+                    WHERE
+                    	ut.LocationDetails = @reqLocation
+                    	AND
+                    	ut.ActivityDate = @reqDate`)
+
+            const result = await request;
+
+            if (result.recordset.length) {
+                const levelOneParse = result.recordset?.map(o => ({
+                    ...o,
+                    Trips: JSON.parse(o?.Trips)
+                }))
+                dataFound(res, levelOneParse)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
 
     return {
         getDrivers,
         getDriverActivities,
         addDriverActivities,
         editDriverActivity,
-        TripBasedReport
+        TripBasedReport,
+        timeBasedReport,
     }
 }
 

@@ -52,7 +52,29 @@ const resFun = () => {
 
   const checkIsNumber = (num) => {
     return num ? isNaN(num) ? false : true : false
-  } 
+  }
+
+  const isJSONString = (str) => {
+    try {
+      JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  };
+
+  const parseNestedJSON = (obj) => {
+    for (let key in obj) {
+      if (typeof obj[key] === 'string' && isJSONString(obj[key])) {
+        obj[key] = JSON.parse(obj[key]);
+        parseNestedJSON(obj[key]); 
+      } else if (typeof obj[key] === 'object') {
+        parseNestedJSON(obj[key]);
+      }
+    }
+    return obj;
+  };
+
 
   return {
     success,
@@ -64,7 +86,9 @@ const resFun = () => {
     isValidDate,
     LocalDateTime,
     getCurrentTime,
-    checkIsNumber
+    checkIsNumber,
+    isJSONString,
+    parseNestedJSON,
   }
 }
 

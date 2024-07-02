@@ -212,10 +212,6 @@ const StaffActivityControll = () => {
                     							EntryDate = @date
                     							AND
                     							LocationDetails = @location
-                    							AND
-                    							Category = uc.Category
-                    							AND
-                    							StaffName = us.StaffName
                     					)
                     				FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
                     			), '{}') AS StaffDetails
@@ -235,6 +231,19 @@ const StaffActivityControll = () => {
                     	us.EntryDate = @date
                     	AND
                     	us.LocationDetails = @location
+                        AND
+                        us.StaffName NOT LIKE '%NOT%'
+                        AND 
+	                    us.EntryTime = (
+	                    	SELECT 
+	                    		Max(EntryTime) as EntryTime 
+	                    	FROM 
+	                    		tbl_StaffActivity 
+	                    	WHERE 
+	                    		EntryDate = @date
+	                    		AND
+	                    		LocationDetails = @location
+	                    )
                     `)
             const result = await request;
 

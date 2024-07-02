@@ -15,7 +15,7 @@ const deliveryActivity = () => {
 
             const request = new sql.Request()
                 .input('reqLocation', reqLocation)
-                .input('reqDate', reqDate)
+                .input('reqDate', reqDate ? reqDate : new Date())
                 .query(`
                     SELECT
                     	DISTINCT da.EntryDate,
@@ -141,10 +141,49 @@ const deliveryActivity = () => {
         }
     }
 
+    const getLastDelivery = async (req, res) => {
+        const { reqDate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required');
+        }
+
+        try {
+
+            const request = new sql.Request()
+                .input('reqLocation', reqLocation)
+                .input('reqDate', reqDate ? reqDate : new Date())
+                .query(`
+                    SELECT
+                    	TOP (1) *
+                    FROM
+                    	tbl_DeliveryActivity
+                    WHERE 
+                    	CONVERT(DATE, EntryDate) = CONVERT(DATE, @reqDate)
+                        AND
+                        LocationDetails = @reqLocation
+                    ORDER BY
+                        EntryTime DESC
+                    `)
+            
+            const result = await request;
+
+            if (result.recordset.length) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
     return {
         getDeliveryReport,
         addDeliveryReport,
         updateDeliveryActivity,
+        getLastDelivery,
     }
 
 }
