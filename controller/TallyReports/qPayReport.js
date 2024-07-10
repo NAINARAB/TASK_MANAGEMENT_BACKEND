@@ -79,7 +79,9 @@ const QPayReport = () => {
                             WHERE
                                 ReportId = @ReportId
                                 AND
-                                CompanyId = @CompanyId`)
+                                CompanyId = @CompanyId
+                            ORDER BY 
+                                OrderBy`)
 
                     const visibledResult = await getVisiblity;
                     const visibledColumns = visibledResult.recordset;
