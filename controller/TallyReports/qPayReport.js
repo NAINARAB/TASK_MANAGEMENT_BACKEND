@@ -32,21 +32,24 @@ const QPayReport = () => {
     }
 
     const getQPayColumns = async (req, res) => {
-        const { CompanyId } = req.query;
+        const { CompanyId, Report_Type_Id } = req.query;
 
         if (!checkIsNumber(CompanyId)) {
             return invalidInput(res, 'CompanyId is required')
         }
 
+        const reportId = Report_Type_Id || 1
+
         try {
             const getColumns = new sql.Request()
+                .input('reportId', reportId)
                 .query(`
                     SELECT 
                     	Report_Columns
                     FROM
                     	tbl_Report_Type
                     WHERE
-                    	Report_Type_Id = 1`)
+                    	Report_Type_Id = @reportId`)
 
             const columns = await getColumns;
 
@@ -69,7 +72,7 @@ const QPayReport = () => {
 
                 if (availableColumns.length > 0) {
                     const getVisiblity = new sql.Request()
-                        .input('ReportId', 1)
+                        .input('ReportId', reportId)
                         .input('CompanyId', CompanyId)
                         .query(`
                             SELECT 
@@ -207,7 +210,7 @@ const QPayReport = () => {
 
         for (const item of dataArray) {
             if (!checkIsNumber(item.Field_Id) || typeof item.isVisible !== 'number') {
-                return invalidInput(res, 'Each element in dataArray must have a valid Field_Id and isVisible boolean');
+                return invalidInput(res, 'Each element in dataArray must have a valid Field_Id, FilterVisiblity and isVisible');
             }
         }
 
@@ -271,10 +274,38 @@ const QPayReport = () => {
         }
     }
 
+    const getSalesData = async (req, res) => {
+        const { Company_Id, Ledger_Id, Fromdate, Todate } = req.query;
+
+        if (!checkIsNumber(Company_Id) || !Ledger_Id || !Fromdate || !Todate) {
+            return invalidInput(res, 'Company_Id, Ledger_Id, Fromdate, Todate is required')
+        }
+        
+        try {
+            const request = new sql.Request()
+                .input('Company_Id', Company_Id)
+                .input('Ledger_Id', Ledger_Id)
+                .input('Fromdate', Fromdate)
+                .input('Todate', Todate)
+                .execute('Q_Pay_Online_Sales_Report_VW')
+
+            const result = await request;
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+     }
+
     return {
         getQpayData,
         postColumnVisiblity,
         getQPayColumns,
+        getSalesData,
     }
 
 }
