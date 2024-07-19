@@ -75,6 +75,11 @@ const resFun = () => {
     return obj;
   };
 
+  const dateStr = (inpt) => {
+    const date = inpt ? inpt : new Date()
+    return new Date(date).toISOString().split('T')[0]
+  }
+
 
   return {
     success,
@@ -89,6 +94,7 @@ const resFun = () => {
     checkIsNumber,
     isJSONString,
     parseNestedJSON,
+    dateStr,
   }
 }
 

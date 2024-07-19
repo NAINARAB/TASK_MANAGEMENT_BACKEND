@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { servError, falied, checkIsNumber, invalidInput, dataFound, noData, success } = require('../res');
+const { servError, falied, checkIsNumber, invalidInput, dataFound, noData, success, dateStr } = require('../res');
 
 
 const QPayReport = () => {
@@ -114,7 +114,7 @@ const QPayReport = () => {
                     } else {
                         noData(res)
                     }
-                    
+
                 } else {
                     noData(res)
                 }
@@ -280,7 +280,7 @@ const QPayReport = () => {
         if (!checkIsNumber(Company_Id) || !Ledger_Id || !Fromdate || !Todate) {
             return invalidInput(res, 'Company_Id, Ledger_Id, Fromdate, Todate is required')
         }
-        
+
         try {
             const request = new sql.Request()
                 .input('Company_Id', Company_Id)
@@ -299,13 +299,113 @@ const QPayReport = () => {
         } catch (e) {
             servError(e, res);
         }
-     }
+    }
+
+
+    const getStockItemBased = async (req, res) => {
+        const { Company_Id, Fromdate, Todate } = req.query;
+
+        if (!checkIsNumber(Company_Id) || !Fromdate || !Todate) {
+            return invalidInput(res, 'Company_Id, Fromdate, Todate is required')
+        }
+
+        try {
+            const request = new sql.Request()
+                .input('Company_Id', Company_Id)
+                .input('Fromdate', Fromdate)
+                .input('Todate', Todate)
+                .execute('Sales_Values_Items_Online_Report_VW')
+
+            const result = await request;
+
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
+    const productBasedSalesDetails = async (req, res) => {
+        const { Fromdate, Todate } = req.query;
+        const { db } = req;
+
+        if (!Fromdate || !Todate) {
+            return invalidInput(res, 'Fromdate and Todate is required')
+        }
+
+        try {
+            const request = new sql.Request(db)
+                .input('Fromdate', dateStr(Fromdate))
+                .input('Todate', dateStr(Todate))
+                .query(`
+                    SELECT   
+                        p.Stock_Tally_Id,
+                        p.Stock_Item,
+                        p.Brand,
+                        p.Group_ST,
+                        p.Bag,
+                        p.Stock_Group,
+                        p.S_Sub_Group_1,
+                        p.Item_Name_Modified,
+                        s.sales_party_ledger_id,
+                        lol.Ledger_Name,
+                        sin.tally_id,
+                        sin.sales_tally_id,
+                        sin.invoice_no,
+                        CONVERT(DATE, s.invoice_date) AS Date,
+                        sin.name_item_id,
+                        sin.bill_qty,
+                        sin.bill_unit,
+                        sin.act_unit,
+                        sin.item_rate,
+                        sin.amount
+                    FROM
+                        sales_inv_stk_info_ob AS sin, 
+                        sales_inv_geninfo_ob AS s, 
+                        tbl_Stock_LOS AS p,
+                        tbl_Ledger_LOL AS lol
+                    WHERE 
+                        s.tally_id = sin.tally_id
+                        AND s.sales_party_ledger_id = lol.Ledger_Tally_Id
+                        AND sin.name_item_id = p.Stock_Tally_Id
+                        AND CONVERT(DATE, s.invoice_date) >= CONVERT(DATE, @Fromdate)  
+                        AND CONVERT(DATE, s.invoice_date) <= CONVERT(DATE, @Todate)
+                    `)
+
+            const result = await request;
+
+            if (result.recordset.length > 0) {
+                const getKGs = (inpt) => {
+                    const num = inpt.split('kg')
+                    return num.length > 1 ? Number(num[0]) : 1
+                }
+                const withItemRate = result.recordset.map(o => ({
+                    ...o,
+                    Item_Rate: Number(o?.item_rate) / getKGs(o?.act_unit),
+                    Quantity: o?.bill_qty + ' ' + o?.bill_unit
+                }))
+                dataFound(res, withItemRate)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) {
+            servError(e, res);
+        }
+
+    }
+
 
     return {
         getQpayData,
         postColumnVisiblity,
         getQPayColumns,
         getSalesData,
+        getStockItemBased,
+        productBasedSalesDetails
     }
 
 }
