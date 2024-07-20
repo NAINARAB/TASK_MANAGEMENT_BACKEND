@@ -73,6 +73,7 @@ ERPRouter.post('/manualPaymentVerification', manualPaymentVerification);
 
 // Driver Activities
 ERPRouter.get('/driverActivities', driverActivities.getDriverActivities);
+ERPRouter.get('/driverActivities/view2', driverActivities.newDriverActivity);
 ERPRouter.get('/driverActivities/tripBased', driverActivities.TripBasedReport);
 ERPRouter.get('/driverActivities/timeBased', driverActivities.timeBasedReport);
 ERPRouter.get('/driverActivities/drivers', driverActivities.getDrivers);
@@ -95,7 +96,7 @@ ERPRouter.put('/deliveryActivities', DeliveryActivity.updateDeliveryActivity)
 
 
 // Staff Activities
-ERPRouter.get('/staffActivities', StaffActivity.getStaffActivity)
+ERPRouter.get('/staffActivities', StaffActivity.getStaffActivityNew)
 ERPRouter.get('/staffActivities/staffBased', StaffActivity.getStaffBased);
 ERPRouter.get('/staffActivities/staffs', StaffActivity.getUniqueStaff)
 ERPRouter.post('/staffActivities', StaffActivity.postStaffActivity)

@@ -114,6 +114,193 @@ const newDriverActivities = () => {
         }
     }
 
+    const optimizedQuery = async (req, res) => {
+        const { reqDate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required')
+        }
+
+        try {
+            const driverRequest = new sql.Request()
+                .input('reqDate', reqDate ? reqDate : new Date())
+                .input('reqLocation', reqLocation)
+                .query(`
+                    SELECT 
+                        DISTINCT da.DriverName,
+                        COALESCE((
+                            SELECT 
+                                DISTINCT tc.TripCategory
+                            FROM
+                                tbl_Driver_Activities AS tc
+                            WHERE
+                                tc.ActivityDate = @reqDate
+                                AND
+                                tc.LocationDetails = @reqLocation
+                            FOR JSON PATH
+                        ), '[]') AS LocationGroup
+                    FROM 
+                        tbl_Driver_Activities AS da
+                    WHERE
+                        da.ActivityDate = @reqDate
+                        AND 
+                        da.LocationDetails = @reqLocation
+                    `)
+
+            const driverResult = await driverRequest;
+
+            if (driverResult.recordset.length > 0) {
+
+                const driverWithCategory = driverResult.recordset?.map(o => ({
+                    ...o,
+                    LocationGroup: JSON.parse(o?.LocationGroup)
+                }))
+
+
+                const tripsRequest = new sql.Request()
+                    .input('reqDate', reqDate ? reqDate : new Date())
+                    .input('reqLocation', reqLocation)
+                    .query(`
+                        SELECT
+                        	DISTINCT t.TripNumber,
+                        	COALESCE((
+                        		SELECT 
+                        			*
+                        		FROM 
+                        			tbl_Driver_Activities
+                        		WHERE 
+                                    TripNumber = t.TripNumber
+                        			AND
+                        			ActivityDate = @reqDate
+                        			AND
+                        			LocationDetails = @reqLocation
+                        		ORDER BY
+                        			CONVERT(TIME, EventTime)
+                        		FOR JSON PATH
+                        	), '[]') AS Trips
+                        FROM
+                        	tbl_Driver_Activities AS t
+                        WHERE 
+                            t.ActivityDate = @reqDate
+                            AND
+                            t.LocationDetails = @reqLocation
+                        ORDER BY
+                            t.TripNumber
+                    `)
+
+                const tripsResult = (await tripsRequest).recordset;
+
+                if (tripsResult.length > 0) {
+                    const tripParsed = tripsResult?.map(o => ({
+                        ...o,
+                        Trips: JSON.parse(o?.Trips)
+                    }))
+
+                    // console.log(tripParsed.map(o => o))
+                    const data = driverWithCategory.map(o => ({
+                        ...o,
+                        LocationGroup: o?.LocationGroup?.map(oo => ({
+                            ...oo,
+                            TripDetails: tripParsed?.filter(obj => {
+                                const arr = [...obj?.Trips?.filter(filt => (filt?.DriverName === o?.DriverName) && (oo?.TripCategory === filt?.TripCategory))]
+                                return {
+                                    ...obj,
+                                    Trips: arr
+                                }
+                            })
+                        }))
+                    }))
+
+                    dataFound(res, data)
+                } else {
+                    noData(res)
+                }
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
+    const newDriverActivity = async (req, res) => {
+        const { reqDate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required');
+        }
+
+        try {
+            const request = new sql.Request()
+                .input('reqDate', reqDate ? reqDate : new Date())
+                .input('reqLocation', reqLocation)
+                .query(`
+                    SELECT 
+                        DISTINCT da.DriverName,
+                    	COALESCE((
+                    		SELECT
+                    			DISTINCT t.TripNumber,
+                    	        COALESCE((
+                    	        	SELECT 
+                    	        		*
+                    	        	FROM 
+                    	        		tbl_Driver_Activities
+                    	        	WHERE 
+                    					DriverName = da.DriverName
+                    					AND
+                                        TripNumber = t.TripNumber
+                    	        		AND
+                    	        		ActivityDate = @reqDate
+                    	        		AND
+                    	        		LocationDetails = @reqLocation
+                    	        	ORDER BY
+                    	        		CONVERT(TIME, EventTime)
+                    	        	FOR JSON PATH
+                    	        ), '[]') AS Trips
+                            FROM
+                            	tbl_Driver_Activities AS t
+                            WHERE 
+                    			t.DriverName = da.DriverName
+                    			AND
+                                t.ActivityDate = @reqDate
+                                AND
+                                t.LocationDetails = @reqLocation
+                            ORDER BY
+                                t.TripNumber
+                    		FOR JSON PATH
+                        ), '[]') AS TripNumber
+                    FROM 
+                        tbl_Driver_Activities AS da
+                    WHERE
+                        CONVERT(DATE, da.ActivityDate) = CONVERT(DATE, @reqDate)
+                        AND 
+                        da.LocationDetails = @reqLocation`)
+
+            const result = await request;
+
+            if (result.recordset.length) {
+                const levelOneParse = result.recordset?.map(o => ({
+                    ...o,
+                    TripNumber: JSON.parse(o?.TripNumber)
+                }));
+
+                const levelTowParse = levelOneParse.map(o => ({
+                    ...o,
+                    TripNumber: o?.TripNumber?.map(oo => ({
+                        ...oo,
+                        Trips: JSON.parse(oo?.Trips)
+                    }))
+                }))
+                dataFound(res, levelTowParse)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
     const addDriverActivities = async (req, res) => {
         const { ActivityDate, LocationDetails, DriverName, TripCategory, TonnageValue, EventTime, TripNumber, CreatedBy } = req.body;
 
@@ -340,6 +527,8 @@ const newDriverActivities = () => {
 
     return {
         getDrivers,
+        optimizedQuery,
+        newDriverActivity,
         getDriverActivities,
         addDriverActivities,
         editDriverActivity,

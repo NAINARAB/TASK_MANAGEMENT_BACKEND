@@ -1,5 +1,6 @@
 const sql = require('mssql');
 const { invalidInput, dataFound, noData, servError, success, falied } = require('../res');
+const { extractHHMM, ISOString } = require('../../helper');
 
 const StaffActivityControll = () => {
 
@@ -77,6 +78,91 @@ const StaffActivityControll = () => {
         }
     }
 
+    const getStaffActivityNew = async (req, res) => {
+        const { reqDate, reqLocation } = req.query;
+    
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required');
+        }
+    
+        try {
+            const timeRequest = new sql.Request()
+                .input('date', reqDate ? new Date(reqDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+                .input('location', reqLocation)
+                .query(`
+                    SELECT
+                        DISTINCT ut.EntryTime,
+                        COALESCE((
+                            SELECT 
+                                DISTINCT uc.Category
+                            FROM
+                                tbl_StaffActivity AS uc
+                            WHERE
+                                uc.EntryDate = CONVERT(DATE, @date)
+                                AND
+                                uc.LocationDetails = @location
+                            ORDER BY
+                                uc.Category
+                            FOR JSON PATH
+                        ), '[]') AS Categories
+                    FROM
+                        tbl_StaffActivity AS ut
+                    WHERE
+                        ut.EntryDate = CONVERT(DATE, @date)
+                        AND
+                        ut.LocationDetails = @location
+                    ORDER BY
+                        ut.EntryTime DESC
+                    `);
+            const timeResult = await timeRequest;
+    
+            if (timeResult.recordset.length > 0) {
+
+                const parsedData = timeResult.recordset.map(o => ({
+                    ...o,
+                    Categories: JSON.parse(o.Categories)
+                }));
+    
+                const getRowRequest = new sql.Request()
+                    .input('date', reqDate ? new Date(reqDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+                    .input('location', reqLocation)
+                    .query(`
+                        SELECT
+                            sa.*
+                        FROM
+                            tbl_StaffActivity AS sa	
+                        WHERE
+                            sa.EntryDate = CONVERT(DATE, @date)
+                            AND
+                            sa.LocationDetails = @location
+                        ORDER BY 
+                            sa.EntryAt`);
+
+                const rowResult = (await getRowRequest).recordset;
+    
+                const mappedData = parsedData.map(time => ({
+                    ...time,
+                    Categories: time.Categories.map(category => ({
+                        ...category,
+                        StaffDetails: [...rowResult.filter(row =>
+                            new Date(row?.EntryTime)?.toISOString() === new Date(time?.EntryTime).toISOString() && row?.Category === category?.Category
+                        )].map(filt => ({ 
+                            ...filt, 
+                            EntryTime: filt.EntryTime ? extractHHMM(filt.EntryTime) : '',
+                            EntryDate: filt.EntryDate ? ISOString(filt.EntryDate) : '',
+                        }))
+                    }))
+                }));
+    
+                dataFound(res, mappedData);
+            } else {
+                noData(res);
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    };
+    
     const postStaffActivity = async (req, res) => {
         const { EntryDate, EntryTime, LocationDetails, Category, StaffName, Tonnage, EntryBy } = req.body;
 
@@ -273,6 +359,7 @@ const StaffActivityControll = () => {
 
     return {
         getStaffActivity,
+        getStaffActivityNew,
         postStaffActivity,
         editStaffActivity,
         getUniqueStaff,
