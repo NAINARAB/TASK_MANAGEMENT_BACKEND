@@ -72,7 +72,7 @@ ERPRouter.post('/manualPaymentVerification', manualPaymentVerification);
 
 
 // Driver Activities
-ERPRouter.get('/driverActivities', driverActivities.getDriverActivities);
+ERPRouter.get('/driverActivities', driverActivities.optimizedQuery);
 ERPRouter.get('/driverActivities/view2', driverActivities.newDriverActivity);
 ERPRouter.get('/driverActivities/tripBased', driverActivities.TripBasedReport);
 ERPRouter.get('/driverActivities/timeBased', driverActivities.timeBasedReport);

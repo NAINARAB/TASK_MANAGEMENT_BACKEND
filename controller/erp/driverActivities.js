@@ -1,5 +1,6 @@
 const sql = require('mssql');
-const { servError, dataFound, noData, success, falied, invalidInput } = require('../res')
+const { servError, dataFound, noData, success, falied, invalidInput } = require('../res');
+const { extractHHMM, ISOString } = require('../../helper');
 
 
 const newDriverActivities = () => {
@@ -130,7 +131,22 @@ const newDriverActivities = () => {
                         DISTINCT da.DriverName,
                         COALESCE((
                             SELECT 
-                                DISTINCT tc.TripCategory
+                                DISTINCT tc.TripCategory,
+                                COALESCE((
+                                    SELECT
+										DISTINCT t.TripNumber
+									FROM
+										tbl_Driver_Activities AS t
+                                    WHERE 
+                                        t.TripCategory = tc.TripCategory
+                                        AND
+                                        t.ActivityDate = @reqDate
+                                        AND
+                                        t.LocationDetails = @reqLocation
+                                    ORDER BY
+                                        t.TripNumber
+                                    FOR JSON PATH
+                                ), '[]') AS TripDetails
                             FROM
                                 tbl_Driver_Activities AS tc
                             WHERE
@@ -151,9 +167,17 @@ const newDriverActivities = () => {
 
             if (driverResult.recordset.length > 0) {
 
-                const driverWithCategory = driverResult.recordset?.map(o => ({
+                const parseOne = driverResult.recordset?.map(o => ({
                     ...o,
                     LocationGroup: JSON.parse(o?.LocationGroup)
+                }))
+
+                const driverWithCategory = parseOne.map(o => ({
+                    ...o,
+                    LocationGroup: o?.LocationGroup?.map(oo => ({
+                        ...oo,
+                        TripDetails: JSON.parse(oo?.TripDetails)
+                    }))
                 }))
 
 
@@ -161,53 +185,38 @@ const newDriverActivities = () => {
                     .input('reqDate', reqDate ? reqDate : new Date())
                     .input('reqLocation', reqLocation)
                     .query(`
-                        SELECT
-                        	DISTINCT t.TripNumber,
-                        	COALESCE((
-                        		SELECT 
-                        			*
-                        		FROM 
-                        			tbl_Driver_Activities
-                        		WHERE 
-                                    TripNumber = t.TripNumber
-                        			AND
-                        			ActivityDate = @reqDate
-                        			AND
-                        			LocationDetails = @reqLocation
-                        		ORDER BY
-                        			CONVERT(TIME, EventTime)
-                        		FOR JSON PATH
-                        	), '[]') AS Trips
-                        FROM
-                        	tbl_Driver_Activities AS t
+                        SELECT 
+                        	*
+                        FROM 
+                        	tbl_Driver_Activities
                         WHERE 
-                            t.ActivityDate = @reqDate
-                            AND
-                            t.LocationDetails = @reqLocation
+                        	ActivityDate = @reqDate
+                        	AND
+                        	LocationDetails = @reqLocation
                         ORDER BY
-                            t.TripNumber
+                        	CONVERT(TIME, EventTime)
                     `)
 
                 const tripsResult = (await tripsRequest).recordset;
 
                 if (tripsResult.length > 0) {
-                    const tripParsed = tripsResult?.map(o => ({
-                        ...o,
-                        Trips: JSON.parse(o?.Trips)
-                    }))
-
-                    // console.log(tripParsed.map(o => o))
                     const data = driverWithCategory.map(o => ({
                         ...o,
                         LocationGroup: o?.LocationGroup?.map(oo => ({
                             ...oo,
-                            TripDetails: tripParsed?.filter(obj => {
-                                const arr = [...obj?.Trips?.filter(filt => (filt?.DriverName === o?.DriverName) && (oo?.TripCategory === filt?.TripCategory))]
-                                return {
-                                    ...obj,
-                                    Trips: arr
-                                }
-                            })
+                            TripDetails: oo?.TripDetails?.map(ooo => ({
+                                ...ooo,
+                                Trips: [...tripsResult.filter(filt => (
+                                    filt?.DriverName === o?.DriverName) &&
+                                    (oo?.TripCategory === filt?.TripCategory) &&
+                                    (filt.TripNumber === ooo?.TripNumber)
+                                )].map(format => ({
+                                    ...format,
+                                    EventTime: format?.EventTime ? extractHHMM(format?.EventTime) + ':00' : '',
+                                    EndTime: format?.EndTime ? extractHHMM(format?.EndTime) + ':00' : '',
+                                    ActivityDate: format?.ActivityDate ? ISOString(format?.ActivityDate) : '',
+                                }))
+                            }))
                         }))
                     }))
 
@@ -268,7 +277,7 @@ const newDriverActivities = () => {
                             ORDER BY
                                 t.TripNumber
                     		FOR JSON PATH
-                        ), '[]') AS TripNumber
+                        ), '[]') AS DriverTrips
                     FROM 
                         tbl_Driver_Activities AS da
                     WHERE
@@ -281,16 +290,17 @@ const newDriverActivities = () => {
             if (result.recordset.length) {
                 const levelOneParse = result.recordset?.map(o => ({
                     ...o,
-                    TripNumber: JSON.parse(o?.TripNumber)
+                    DriverTrips: JSON.parse(o?.DriverTrips)
                 }));
 
                 const levelTowParse = levelOneParse.map(o => ({
                     ...o,
-                    TripNumber: o?.TripNumber?.map(oo => ({
+                    DriverTrips: o?.DriverTrips?.map(oo => ({
                         ...oo,
                         Trips: JSON.parse(oo?.Trips)
                     }))
                 }))
+
                 dataFound(res, levelTowParse)
             } else {
                 noData(res)
@@ -302,7 +312,7 @@ const newDriverActivities = () => {
     }
 
     const addDriverActivities = async (req, res) => {
-        const { ActivityDate, LocationDetails, DriverName, TripCategory, TonnageValue, EventTime, TripNumber, CreatedBy } = req.body;
+        const { ActivityDate, LocationDetails, DriverName, TripCategory, TonnageValue, EventTime, EndTime, VehicleNumber, TripNumber, CreatedBy } = req.body;
 
         if (!DriverName || !LocationDetails || !TripCategory || !TonnageValue || !EventTime) {
             return invalidInput(res, 'DriverName, LocationDetails, TripCategory, TonnageValue, EventTime, TripNumber is required');
@@ -316,14 +326,16 @@ const newDriverActivities = () => {
                 .input('TripCategory', TripCategory)
                 .input('TonnageValue', TonnageValue)
                 .input('EventTime', EventTime)
+                .input('EndTime', EndTime)
+                .input('VehicleNumber', VehicleNumber)
                 .input('TripNumber', TripNumber ? TripNumber : 0)
                 .input('CreatedAt', new Date())
                 .input('CreatedBy', CreatedBy)
                 .query(`
                     INSERT INTO tbl_Driver_Activities
-                        (ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, CreatedAt, CreatedBy)
+                        (ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, EndTime, VehicleNumber, CreatedAt, CreatedBy)
                     VALUES
-                        (@ActivityDate, @LocationDetails, @DriverName, @TripCategory, @TripNumber, @TonnageValue, @EventTime, @CreatedAt, @CreatedBy)`
+                        (@ActivityDate, @LocationDetails, @DriverName, @TripCategory, @TripNumber, @TonnageValue, @EventTime, @EndTime, VehicleNumber, @CreatedAt, @CreatedBy)`
                 )
 
             const result = await request;
@@ -340,7 +352,7 @@ const newDriverActivities = () => {
     }
 
     const editDriverActivity = async (req, res) => {
-        const { Id, ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, CreatedBy } = req.body;
+        const { Id, ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, EndTime, VehicleNumber, CreatedBy } = req.body;
 
         try {
             const request = new sql.Request()
@@ -352,6 +364,8 @@ const newDriverActivities = () => {
                 .input('TripNumber', TripNumber)
                 .input('TonnageValue', TonnageValue)
                 .input('EventTime', EventTime)
+                .input('EndTime', EndTime)
+                .input('VehicleNumber', VehicleNumber)
                 .input('CreatedBy', CreatedBy)
                 .query(`
                     UPDATE tbl_Driver_Activities
@@ -363,6 +377,8 @@ const newDriverActivities = () => {
                         TripNumber = @TripNumber,
                         TonnageValue = @TonnageValue,
                         EventTime = @EventTime,
+                        EndTime = @EndTime,
+                        VehicleNumber = @VehicleNumber,
                         CreatedBy = @CreatedBy
                     WHERE
                         Id = @Id
