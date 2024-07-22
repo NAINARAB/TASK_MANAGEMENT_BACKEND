@@ -335,7 +335,7 @@ const newDriverActivities = () => {
                     INSERT INTO tbl_Driver_Activities
                         (ActivityDate, LocationDetails, DriverName, TripCategory, TripNumber, TonnageValue, EventTime, EndTime, VehicleNumber, CreatedAt, CreatedBy)
                     VALUES
-                        (@ActivityDate, @LocationDetails, @DriverName, @TripCategory, @TripNumber, @TonnageValue, @EventTime, @EndTime, VehicleNumber, @CreatedAt, @CreatedBy)`
+                        (@ActivityDate, @LocationDetails, @DriverName, @TripCategory, @TripNumber, @TonnageValue, @EventTime, @EndTime, @VehicleNumber, @CreatedAt, @CreatedBy)`
                 )
 
             const result = await request;

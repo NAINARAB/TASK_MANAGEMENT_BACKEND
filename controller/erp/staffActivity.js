@@ -80,11 +80,11 @@ const StaffActivityControll = () => {
 
     const getStaffActivityNew = async (req, res) => {
         const { reqDate, reqLocation } = req.query;
-    
+
         if (!reqLocation) {
             return invalidInput(res, 'reqLocation is required');
         }
-    
+
         try {
             const timeRequest = new sql.Request()
                 .input('date', reqDate ? new Date(reqDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
@@ -115,14 +115,14 @@ const StaffActivityControll = () => {
                         ut.EntryTime DESC
                     `);
             const timeResult = await timeRequest;
-    
+
             if (timeResult.recordset.length > 0) {
 
                 const parsedData = timeResult.recordset.map(o => ({
                     ...o,
                     Categories: JSON.parse(o.Categories)
                 }));
-    
+
                 const getRowRequest = new sql.Request()
                     .input('date', reqDate ? new Date(reqDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
                     .input('location', reqLocation)
@@ -139,21 +139,21 @@ const StaffActivityControll = () => {
                             sa.EntryAt`);
 
                 const rowResult = (await getRowRequest).recordset;
-    
+
                 const mappedData = parsedData.map(time => ({
                     ...time,
                     Categories: time.Categories.map(category => ({
                         ...category,
                         StaffDetails: [...rowResult.filter(row =>
                             new Date(row?.EntryTime)?.toISOString() === new Date(time?.EntryTime).toISOString() && row?.Category === category?.Category
-                        )].map(filt => ({ 
-                            ...filt, 
+                        )].map(filt => ({
+                            ...filt,
                             EntryTime: filt.EntryTime ? extractHHMM(filt.EntryTime) : '',
                             EntryDate: filt.EntryDate ? ISOString(filt.EntryDate) : '',
                         }))
                     }))
                 }));
-    
+
                 dataFound(res, mappedData);
             } else {
                 noData(res);
@@ -162,7 +162,7 @@ const StaffActivityControll = () => {
             servError(e, res);
         }
     };
-    
+
     const postStaffActivity = async (req, res) => {
         const { EntryDate, EntryTime, LocationDetails, Category, StaffName, Tonnage, EntryBy } = req.body;
 
@@ -282,9 +282,9 @@ const StaffActivityControll = () => {
                     				FROM
                     					tbl_StaffActivity
                     				WHERE
-                    					us.EntryDate = @date
+                    					EntryDate = @date
                     					AND
-                    					us.LocationDetails = @location
+                    					LocationDetails = @location
                     					AND
                     					Category = uc.Category
                     					AND
@@ -356,6 +356,117 @@ const StaffActivityControll = () => {
         }
     }
 
+    const getStaffBasedNew = async (req, res) => {
+        const { reqDate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required');
+        }
+
+        try {
+            const staffsRequest = new sql.Request()
+                .input('date', reqDate ? new Date(reqDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+                .input('location', reqLocation)
+                .query(`
+                    WITH LatestEntries AS (
+                        SELECT
+                            StaffName,
+                            MAX(EntryTime) AS LatestEntryTime
+                        FROM
+                            tbl_StaffActivity
+                        WHERE
+                            EntryDate = @date
+                            AND LocationDetails = @location
+                        GROUP BY
+                            StaffName
+                    ),
+                    Categories AS (
+                        SELECT DISTINCT
+                            Category
+                        FROM
+                            tbl_StaffActivity
+                        WHERE
+                            EntryDate = @date
+                            AND LocationDetails = @location
+                    )
+                    SELECT
+                        us.StaffName,
+                        ISNULL((
+                            SELECT DISTINCT
+                                c.Category
+                            FROM
+                                Categories c
+                            FOR JSON PATH
+                        ), '[]') AS Categories
+                    FROM
+                        tbl_StaffActivity us
+                        INNER JOIN LatestEntries le ON us.StaffName = le.StaffName AND us.EntryTime = le.LatestEntryTime
+                    WHERE
+                        us.EntryDate = @date
+                        AND us.LocationDetails = @location
+                        AND us.StaffName NOT LIKE '%NOT%'
+                        AND us.StaffName NOT LIKE '%NO%'
+                    GROUP BY
+                        us.StaffName;
+                    `)
+            const staffsResult = (await staffsRequest).recordset;
+
+            if (staffsResult.length > 0) {
+                const parsedData = staffsResult?.map(o => ({
+                    ...o,
+                    Categories: JSON.parse(o?.Categories)
+                }))
+
+                const staffsDetailsRequest = new sql.Request()
+                    .input('date', reqDate ? new Date(reqDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+                    .input('location', reqLocation)
+                    .query(`
+                        SELECT
+				        	us.*
+				        FROM
+				        	tbl_StaffActivity AS us
+				        WHERE
+				        	us.EntryDate = @date
+				        	AND
+				        	us.LocationDetails = @location
+				        	AND EntryTime IN (
+				        		SELECT 
+				        			Max(EntryTime) as EntryTime 
+				        		FROM 
+				        			tbl_StaffActivity 
+				        		WHERE 
+				        			EntryDate = @date
+				        			AND
+				        			LocationDetails = @location
+				        	)
+                        `)
+
+                const staffsDetailsResult = (await staffsDetailsRequest).recordset;
+
+                if (staffsDetailsResult.length > 0) {
+                    const combinedData = parsedData?.map(o => ({
+                        ...o,
+                        Categories: o?.Categories?.map(oo => ({
+                            ...oo,
+                            StaffDetails: staffsDetailsResult.find(filt => 
+                                filt?.StaffName === o?.StaffName && filt?.Category === oo?.Category
+                            ) || {}
+                        }))
+                    }));
+
+                    dataFound(res, combinedData)
+                } else {
+                    noData(res);
+                }
+
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
 
     return {
         getStaffActivity,
@@ -363,7 +474,8 @@ const StaffActivityControll = () => {
         postStaffActivity,
         editStaffActivity,
         getUniqueStaff,
-        getStaffBased
+        getStaffBased,
+        getStaffBasedNew,
     }
 
 }
