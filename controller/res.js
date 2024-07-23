@@ -6,12 +6,12 @@ const resFun = () => {
     return res.status(200).json({ data: data || [], message: message || 'Done!', success: true });
   }
 
-  function dataFound(res, data, message) {
-    return res.status(200).json({ data: data, message: message || 'Data Found', success: true });
+  function dataFound(res, data, message, others) {
+    return res.status(200).json({ data: data, message: message || 'Data Found', success: true, others :  {...others} || {} });
   }
 
-  function noData(res, message) {
-    return res.status(200).json({ data: [], success: true, message: message || 'No data' })
+  function noData(res, message, others) {
+    return res.status(200).json({ data: [], success: true, message: message || 'No data', others :  {...others} || {}  })
   }
 
   function falied(res, message) {

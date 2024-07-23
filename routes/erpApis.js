@@ -16,6 +16,7 @@ const StaffActivity = require('../controller/erp/staffActivity');
 const { MachineOuternControll, getMachineOuternController } = require('../controller/erp/machineOutrn');
 const { getInwardActivity, InwardActivityControll } = require('../controller/erp/inwardActivity');
 const WGCheckController = require('../controller/erp/WGCheckActivity');
+const dataEntryAttendance = require('../controller/erp/dataEntryAttendance');
 // const getImagesMiddleware = require('../controller/erp/fileHandling/getImagesMiddleware');
 
 
@@ -119,6 +120,13 @@ ERPRouter.get('/weightCheckActivity/getItems', WGCheckController.getItems)
 ERPRouter.get('/weightCheckActivity', WGCheckController.getWGChecking)
 ERPRouter.post('/weightCheckActivity', WGCheckController.addWGCheckActivity)
 ERPRouter.put('/weightCheckActivity', WGCheckController.editWGCheckActivity)
+
+
+// Data Entry Attendance
+ERPRouter.get('/dataEntryAttendance', dataEntryAttendance.getAttendance)
+ERPRouter.post('/dataEntryAttendance', dataEntryAttendance.insertAttendance)
+ERPRouter.put('/dataEntryAttendance', dataEntryAttendance.updateAttendance)
+
 
 
 
