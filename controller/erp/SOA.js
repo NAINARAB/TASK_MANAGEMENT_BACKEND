@@ -338,10 +338,8 @@ const CustomerAPIs = () => {
             if (!Fromdate, !Todate) {
                 return invalidInput(res, 'Fromdate, Todate is required')
             }
-
-            const guid = req.config.Tally_Guid;
     
-            const DynamicDB = new sql.Request(req.db);
+            const DynamicDB = new sql.Request();
             DynamicDB.input('Company_Id', 5);
             DynamicDB.input('Vouche_Id', 0);
             DynamicDB.input('Fromdate', Fromdate)

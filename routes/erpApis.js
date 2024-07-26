@@ -59,7 +59,7 @@ ERPRouter.get('/salesInfo', SOA.salesInfo);
 
 // stock Report
 ERPRouter.get('/stockReport', dbconnect, SOA.stockReport);
-ERPRouter.get('/tally-test-api', dbconnectDBidPass, SOA.externalAPI);
+ERPRouter.get('/tally-test-api', SOA.externalAPI);
 
 
 
