@@ -170,7 +170,7 @@ const dataEntryAttendance = () => {
             const checkResult = (await checkExists).recordset[0].ROWS;
 
             if (checkResult > 0) {
-                return falied(res, 'This type of Attendance is already exist for the date')
+                return falied(res, 'Already Exist')
             }
 
             const request = new sql.Request()
@@ -212,6 +212,7 @@ const dataEntryAttendance = () => {
                 .input('LocationDetails', LocationDetails)
                 .input('WorkDetails', WorkDetails)
                 .input('StaffType', StaffType)
+                .input('Id', Id)
                 .query(`
                     SELECT 
                         COUNT (*) AS ROWS 
@@ -225,12 +226,14 @@ const dataEntryAttendance = () => {
                         WorkDetails = @WorkDetails
                         AND
                         StaffType = @StaffType
+                        AND
+                        Id <> @Id
                     `)
 
             const checkResult = (await checkExists).recordset[0].ROWS;
 
             if (checkResult > 0) {
-                return falied(res, 'This type of Attendance is already exist for the date')
+                return falied(res, 'Already Exist')
             }
 
             const request = new sql.Request()

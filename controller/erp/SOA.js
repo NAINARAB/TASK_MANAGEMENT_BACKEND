@@ -331,6 +331,33 @@ const CustomerAPIs = () => {
         }
     }
 
+    const externalAPI = async (req, res) => {
+        try {
+            const { Fromdate, Todate } = req.query;
+
+            if (!Fromdate, !Todate) {
+                return invalidInput(res, 'Fromdate, Todate is required')
+            }
+
+            const guid = req.config.Tally_Guid;
+    
+            const DynamicDB = new sql.Request(req.db);
+            DynamicDB.input('Company_Id', 5);
+            DynamicDB.input('Vouche_Id', 0);
+            DynamicDB.input('Fromdate', Fromdate)
+            DynamicDB.input('Todate', Todate);
+    
+            const result = await DynamicDB.execute('Online_Sales_API');
+            if (result.recordset.length > 0) {
+                dataFound(res, result.recordset)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
 
 
     return {
@@ -342,6 +369,7 @@ const CustomerAPIs = () => {
         salesInfo,
         stockReport,
         purchaseReport,
+        externalAPI,
     }
 }
 

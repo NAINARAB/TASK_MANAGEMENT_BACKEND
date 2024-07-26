@@ -8,6 +8,7 @@ const company = require('../controller/company');
 const SOA = require('../controller/erp/SOA');
 const EmployeeController = require('../controller/erp/employee')
 const dbconnect = require('../controller/erp/otherDB');
+const dbconnectDBidPass = require('../controller/erp/otherDBidPass');
 const { manualPayment, PaymentHistory, manualPaymentVerification } = require('../controller/erp/payment');
 const driverActivities = require('../controller/erp/driverActivities')
 const GodownActivity = require('../controller/erp/godownActivity');
@@ -17,6 +18,7 @@ const { MachineOuternControll, getMachineOuternController } = require('../contro
 const { getInwardActivity, InwardActivityControll } = require('../controller/erp/inwardActivity');
 const WGCheckController = require('../controller/erp/WGCheckActivity');
 const dataEntryAttendance = require('../controller/erp/dataEntryAttendance');
+const ReportTemplate = require('../controller/erp/reportTemplate');
 // const getImagesMiddleware = require('../controller/erp/fileHandling/getImagesMiddleware');
 
 
@@ -56,7 +58,9 @@ ERPRouter.get('/salesInfo', SOA.salesInfo);
 
 
 // stock Report
-ERPRouter.get('/stockReport', dbconnect, SOA.stockReport)
+ERPRouter.get('/stockReport', dbconnect, SOA.stockReport);
+ERPRouter.get('/tally-test-api', dbconnectDBidPass, SOA.externalAPI);
+
 
 
 
@@ -126,6 +130,10 @@ ERPRouter.put('/weightCheckActivity', WGCheckController.editWGCheckActivity)
 ERPRouter.get('/dataEntryAttendance', dataEntryAttendance.getAttendance)
 ERPRouter.post('/dataEntryAttendance', dataEntryAttendance.insertAttendance)
 ERPRouter.put('/dataEntryAttendance', dataEntryAttendance.updateAttendance)
+
+
+ERPRouter.get('/reportTemplate', ReportTemplate.getTablesandColumnsForReport);
+ERPRouter.post('/reportTemplate', ReportTemplate.insertTemplate);
 
 
 
