@@ -347,7 +347,14 @@ const CustomerAPIs = () => {
     
             const result = await DynamicDB.execute('Online_Sales_API');
             if (result.recordset.length > 0) {
-                dataFound(res, result.recordset)
+                const sales = JSON.parse(result.recordset[0]?.SALES)
+                const parsed = JSON.parse(sales.Sales);
+                const itemsParse = parsed.map(o => ({
+                    ...o,
+                    ALLINVENTORYENTRIES: JSON.parse(o?.ALLINVENTORYENTRIES),
+                    LEDGERENTRIES: JSON.parse(o?.LEDGERENTRIES)
+                }))
+                dataFound(res, itemsParse)
             } else {
                 noData(res)
             }
