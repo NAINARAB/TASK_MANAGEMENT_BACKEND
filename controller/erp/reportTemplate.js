@@ -107,10 +107,11 @@ const ReportTemplate = () => {
                         }
                     }
                 }
-            } else {
-                errorCount += 1;
-                errors.push('multiple tables received but no joins are supplied')
-            }
+            } 
+            // else {
+            //     errorCount += 1;
+            //     errors.push('multiple tables received but no joins are supplied')
+            // }
 
             if (errorCount > 0) {
                 return invalidInput(res, `invalid Input errors ${errorCount}`, { errors });
@@ -137,12 +138,13 @@ const ReportTemplate = () => {
                 // Creating Report Type
                 const reportTypeInsertRequest = new sql.Request(transaction)
                     .input('reportName', reportName)
-                    .input('ReportState', JSON.stringify({ tables, reportName, tableJoins}))
+                    .input('ReportState', JSON.stringify({ tables, reportName, tableJoins }))
+                    .input('CreatedBy', createdBy)
                     .query(`
                         INSERT INTO tbl_Report_Type
-                            (Report_Name, ReportState)
+                            (Report_Name, ReportState, CreatedBy)
                         VALUES
-                            (@reportName, @ReportState);
+                            (@reportName, @ReportState, @CreatedBy);
                         
                         SELECT SCOPE_IDENTITY() AS ReportID;`);
 
@@ -209,7 +211,7 @@ const ReportTemplate = () => {
                     }
 
                     // Generating sql Query 
-                    let queryString = 'SELECT ' + colToInsert.join(',') + ' FROM ';
+                    let queryString = 'SELECT ' + colToInsert.join(', ') + ' FROM ';
 
                     queryString += tables.map(table => `${table.Table_Name} AS ${getTableAccronym(tableMaster, table.Table_Id)}`).join(', ');
 
@@ -258,21 +260,163 @@ const ReportTemplate = () => {
         }
     }
 
-    // const getTemplates = async (req, res) => {
+    const getTemplates = async (req, res) => {
 
-    //     try {
-    //         const reportName = (await sql.query(`SELECT * FROM tbl_Report_TypeWHERE Type = 1`)).recordset;
-    //         const tables = (await sql.query(
+        const { ReportId } = req.query;
 
-    //         ))
-    //     } catch (e) {
-    //         servError(e, res);
-    //     }
-    // }
+        try {
+            let query = `
+            WITH reportName AS (
+                	SELECT 
+                    	r.*,
+                    	COALESCE(u.Name, 'Name Not Found') AS CreatedByGet
+                    FROM 
+                    	tbl_Report_Type AS r
+                    	LEFT JOIN tbl_Users AS u
+                    	ON r.CreatedBy = u.UserId
+                    WHERE 
+                    	Type = 1
+                ), tableMaster AS (
+                	SELECT * FROM tbl_Table_Master
+                ), tableColumns AS (
+                	SELECT * FROM tbl_Table_Master_Columns
+                ), columnsList AS (
+                	SELECT * FROM tbl_ReportColumns
+                ), joinList AS (
+                	SELECT * FROM tbl_Report_Table_Join
+                ) 
+                SELECT 
+                	r.*,
+                	COALESCE((
+                		SELECT 
+                			DISTINCT cl.Table_Id,
+                			tbl.Table_Name,
+                			tbl.AliasName,
+                			tbl.Table_Type,
+                			tbl.Table_Accronym,
+                			COALESCE((
+                				SELECT
+                                    clm.Table_Id,
+                                    clm.Column_Data_Type,
+                                    clm.IS_Default,
+                                    clm.IS_Join_Key,
+                					clmlist.Column_Name,
+                					clmlist.Report_Type_Id,
+                					clmlist.Order_By
+                				FROM
+                					columnsList AS clmlist,
+                					tableColumns AS clm
+                				WHERE
+                					clmlist.Table_Id = cl.Table_Id
+                					AND
+                                    clm.Table_Id = cl.Table_Id
+                                    AND
+                					clmlist.Column_Name = clm.Column_Name
+                					AND
+                					clmlist.Report_Type_Id = r.Report_Type_Id
+                				FOR JSON PATH
+                			), '[]') AS columnsList
+                		FROM
+                			columnsList AS cl,
+                			tableMaster AS tbl
+                		WHERE
+                			cl.Report_Type_Id = r.Report_Type_Id
+                			AND
+                			tbl.Table_Id = cl.Table_Id
+                		FOR JSON PATH
+                	), '[]') AS tablesList,
+                	COALESCE((
+                		SELECT
+                			jlist.*,
+                			tmlistOne.Table_Name AS FirstTableName,
+                			tmlistTwo.Table_Name AS SecondTableName
+                		FROM
+                			joinList AS jlist,
+                			tableMaster AS tmlistOne,
+                			tableMaster AS tmlistTwo
+                		WHERE
+                			jlist.Report_Type_Id = r.Report_Type_Id
+                			AND
+                			tmlistOne.Table_Id = jlist.Join_First_Table_Id
+                			AND
+                			tmlistTwo.Table_Id = jlist.Join_Second_Table_Id
+                		FOR JSON PATH
+                	), '[]') AS TableJoins
+                From 
+                	reportName AS r
+            `
+
+            if (checkIsNumber(ReportId)) {
+                query += ' WHERE r.Report_Type_Id = @Report_Type_Id';
+            }
+
+            const request = new sql.Request();
+
+            if (checkIsNumber(ReportId)) {
+                request.input('Report_Type_Id', ReportId);
+            }
+
+            const result = await request.query(query);
+            const reports = result.recordset;
+
+            if (reports.length > 0) {
+                const parseOne = reports.map(o => ({
+                    ...o,
+                    tablesList: JSON.parse(o.tablesList),
+                    TableJoins: JSON.parse(o.TableJoins)
+                }))
+                const parseTwo = parseOne.map(o => ({
+                    ...o,
+                    tablesList: o?.tablesList?.map(oo => ({
+                        ...oo,
+                        columnsList: JSON.parse(oo?.columnsList)
+                    }))
+                }))
+                dataFound(res, parseTwo)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
+    const executeTemplateSQL = async (req, res) => {
+        const { ReportID } = req.query;
+
+        if (!checkIsNumber(ReportID)) {
+            return invalidInput(res, 'ReportID is required')
+        }
+        console.log(req.config)
+
+        try {
+            const exeQuery = (await new sql.Request()
+                .input('Report_Type_Id', ReportID)
+                .query('SELECT Report_Columns FROM tbl_Report_Type WHERE Report_Type_Id = @Report_Type_Id')).recordset[0]?.Report_Columns;
+
+            if (!exeQuery) {
+                return falied(res, 'Query Not Found');
+            }
+
+            const getQueryResult = (await new sql.Request(req.db).query(exeQuery)).recordset;
+
+            if (getQueryResult.length > 0) {
+                dataFound(res, getQueryResult)
+            } else {
+                noData(res)
+            }
+
+        } catch (e) {
+            servError(e, res);
+        }
+    }
 
     return {
         getTablesandColumnsForReport,
         insertTemplate,
+        getTemplates,
+        executeTemplateSQL,
     }
 }
 

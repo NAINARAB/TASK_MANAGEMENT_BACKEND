@@ -132,7 +132,10 @@ ERPRouter.post('/dataEntryAttendance', dataEntryAttendance.insertAttendance)
 ERPRouter.put('/dataEntryAttendance', dataEntryAttendance.updateAttendance)
 
 
-ERPRouter.get('/reportTemplate', ReportTemplate.getTablesandColumnsForReport);
+ERPRouter.get('/reportTablesAndColumns', ReportTemplate.getTablesandColumnsForReport);
+
+ERPRouter.get('/reportTemplate', ReportTemplate.getTemplates);
+ERPRouter.get('/reportTemplate/executeQuery', dbconnect, ReportTemplate.executeTemplateSQL);
 ERPRouter.post('/reportTemplate', ReportTemplate.insertTemplate);
 
 
