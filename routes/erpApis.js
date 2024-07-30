@@ -137,6 +137,7 @@ ERPRouter.get('/reportTablesAndColumns', ReportTemplate.getTablesandColumnsForRe
 ERPRouter.get('/reportTemplate', ReportTemplate.getTemplates);
 ERPRouter.get('/reportTemplate/executeQuery', dbconnect, ReportTemplate.executeTemplateSQL);
 ERPRouter.post('/reportTemplate', ReportTemplate.insertTemplate);
+ERPRouter.put('/reportTemplate', ReportTemplate.updateTemplate);
 
 
 
