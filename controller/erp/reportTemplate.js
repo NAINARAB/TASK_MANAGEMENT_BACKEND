@@ -1,5 +1,7 @@
 const sql = require('mssql');
 const { servError, dataFound, noData, success, falied, invalidInput, checkIsNumber } = require('../res');
+const { isValidObject } = require('../../helper');
+require('dotenv').config();
 
 
 const getTableAccronym = (arr, tableId) => {
@@ -383,34 +385,109 @@ const ReportTemplate = () => {
     }
 
     const executeTemplateSQL = async (req, res) => {
-        const { ReportID } = req.query;
+        const { ReportID, filterReq } = req.body;
+        let exeQuery = '';
 
         if (!checkIsNumber(ReportID)) {
-            return invalidInput(res, 'ReportID is required')
+            return invalidInput(res, 'ReportID is required');
         }
-        console.log(req.config)
 
         try {
-            const exeQuery = (await new sql.Request()
-                .input('Report_Type_Id', ReportID)
-                .query('SELECT Report_Columns FROM tbl_Report_Type WHERE Report_Type_Id = @Report_Type_Id')).recordset[0]?.Report_Columns;
+            let exeQueryResult = await new sql.Request()
+                .input('Report_Type_Id', sql.Int, ReportID)
+                .query('SELECT Report_Columns FROM tbl_Report_Type WHERE Report_Type_Id = @Report_Type_Id');
+
+            exeQuery = exeQueryResult.recordset[0]?.Report_Columns;
+            let filterText = [];
 
             if (!exeQuery) {
                 return falied(res, 'Query Not Found');
+            } else {
+                const whereExist = String(exeQuery).includes('WHERE');
+                const filterIsObject = isValidObject(filterReq);
+
+                if (filterIsObject) {
+                    const fetch = (await import('node-fetch')).default;
+                    const response = await fetch(`${process.env.domain}user/api/reportTemplate?ReportId=${ReportID}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        exeQuery += filterIsObject ? (!whereExist ? ' WHERE ' : ' AND ') : '';
+                        const o = data.data[0];
+                        const structure = {
+                            Report_Type_Id: o?.Report_Type_Id,
+                            reportName: o?.Report_Name,
+                            tables: o?.tablesList?.map(table => ({
+                                Table_Id: table?.Table_Id,
+                                Table_Name: table?.Table_Name,
+                                AliasName: table?.AliasName,
+                                Table_Accronym: table?.Table_Accronym,
+                                isChecked: true,
+                                columns: table?.columnsList?.map(column => ({
+                                    Column_Data_Type: column?.Column_Data_Type,
+                                    Column_Name: column?.Column_Name,
+                                    IS_Default: column?.IS_Default,
+                                    IS_Join_Key: column?.IS_Join_Key,
+                                    Order_By: column?.Order_By,
+                                    Table_Id: column?.Table_Id,
+                                    isVisible: true,
+                                    accessColumnName: `${table?.Table_Accronym}.${column?.Column_Name}`
+                                }))
+                            }))
+                        };
+
+                        const columns = structure.tables.reduce((colArr, table) => colArr.concat(table.columns), []);
+
+                        Object.entries(filterReq).forEach(([key, value]) => {
+                            let columnInfo = columns.find(col => col.Column_Name === key);
+                            if (columnInfo) {
+                                switch (value.type) {
+                                    case 'range':
+                                        if (value?.value?.min) {
+                                            filterText.push(` ${columnInfo.accessColumnName} >= '${value.value.min}' `);
+                                        }
+                                        if (value?.value?.max) {
+                                            filterText.push(` ${columnInfo.accessColumnName} <= '${value.value.max}' `);
+                                        }
+                                        break;
+                                    case 'date':
+                                        if (value?.value?.start) {
+                                            filterText.push(` CONVERT(DATE, ${columnInfo.accessColumnName}) >= CONVERT(DATE, '${value.value.start}') `);
+                                        }
+                                        if (value?.value?.end) {
+                                            filterText.push(` CONVERT(DATE, ${columnInfo.accessColumnName}) <= CONVERT(DATE, '${value.value.end}') `);
+                                        }
+                                        break;
+                                    case 'textCompare':
+                                        if (value?.value) {
+                                            filterText.push(` LOWER(${columnInfo.accessColumnName}) LIKE LOWER('%${value.value}%') `);
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                        });
+
+                        exeQuery += filterText.join(' AND ');
+                    }
+                }
             }
+
+            console.log(exeQuery);
 
             const getQueryResult = (await new sql.Request(req.db).query(exeQuery)).recordset;
 
             if (getQueryResult.length > 0) {
-                dataFound(res, getQueryResult)
+                dataFound(res, getQueryResult);
             } else {
-                noData(res)
+                noData(res);
             }
 
         } catch (e) {
-            servError(e, res);
+            servError(e, res, 'Server error', { exeQuery });
         }
-    }
+    };
 
     const updateTemplate = async (req, res) => {
         const { tables, Report_Type_Id, reportName, createdBy, tableJoins } = req.body;
@@ -525,7 +602,7 @@ const ReportTemplate = () => {
                         DELETE FROM tbl_ReportColumns WHERE Report_Type_Id = @Report_Type_Id;
                         DELETE FROM tbl_Report_Table_Join WHERE Report_Type_Id = @Report_Type_Id;
                     `)
-                
+
                 await deleteExist;
 
                 //Inserting Tables and Columns 
@@ -627,7 +704,7 @@ const ReportTemplate = () => {
     }
 
     const deleteTemplate = async (req, res) => {
-        const { Report_Type_Id } = req.query;
+        const { Report_Type_Id } = req.body;
 
         try {
             const request = new sql.Request()
@@ -651,6 +728,7 @@ const ReportTemplate = () => {
         getTemplates,
         executeTemplateSQL,
         updateTemplate,
+        deleteTemplate
     }
 }
 

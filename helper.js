@@ -13,8 +13,13 @@ const ISOString = (dateObj) => {
     return receivedDate.toISOString().split('T')[0]
 }
 
+const isValidObject = (obj) => {
+    return Object.prototype.toString.call(obj) === '[object Object]' && Object.keys(obj).length !== 0;
+}
+
 
 module.exports = {
     extractHHMM,
     ISOString,
+    isValidObject,
 }
