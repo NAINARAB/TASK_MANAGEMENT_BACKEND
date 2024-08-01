@@ -127,7 +127,7 @@ ERPRouter.put('/weightCheckActivity', WGCheckController.editWGCheckActivity)
 
 
 // Data Entry Attendance
-ERPRouter.get('/dataEntryAttendance', dataEntryAttendance.getAttendance)
+ERPRouter.get('/dataEntryAttendance', dataEntryAttendance.getAttendanceNew)
 ERPRouter.post('/dataEntryAttendance', dataEntryAttendance.insertAttendance)
 ERPRouter.put('/dataEntryAttendance', dataEntryAttendance.updateAttendance)
 

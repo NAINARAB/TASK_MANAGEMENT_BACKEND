@@ -129,7 +129,90 @@ const dataEntryAttendance = () => {
                     WorkDetails: getResult[1],
                     StaffType: getResult[2]
                 });
-                
+
+            } else {
+                noData(res);
+            }
+        } catch (e) {
+            servError(e, res);
+        }
+    }
+
+    const getAttendanceNew = async (req, res) => {
+        const { Fromdate, Todate, reqLocation } = req.query;
+
+        if (!reqLocation) {
+            return invalidInput(res, 'reqLocation is required');
+        }
+
+        try {
+            const getRequest = new sql.Request()
+                .input('Fromdate', sql.Date, Fromdate ? ISOString(Fromdate) : ISOString())
+                .input('Todate', sql.Date, Todate ? ISOString(Todate) : ISOString())
+                .input('LocationDetails', sql.NVarChar(50), reqLocation)
+                .query(`
+                    SELECT 
+                        *
+                    FROM
+                        tbl_Data_Entry_Attendance
+                    WHERE
+                        EntryDate >= @Fromdate
+                        AND
+                        EntryDate <= @Todate
+                        AND
+                        LocationDetails = @LocationDetails
+                    ORDER BY
+                        EntryDate DESC;
+
+                    SELECT
+                        DISTINCT WorkDetails
+                    FROM
+                        tbl_Data_Entry_Attendance;
+
+                    SELECT
+                        DISTINCT StaffType
+                    FROM
+                        tbl_Data_Entry_Attendance;
+
+                    SELECT 
+                    	DISTINCT WorkDetails, 
+                    	StaffType 
+                    FROM 
+                    	tbl_Data_Entry_Attendance
+                    WHERE
+                        LocationDetails = @LocationDetails
+                    `)
+
+            const getResult = (await getRequest).recordsets;
+
+            if (getResult[0].length > 0) {
+
+                const UniqueDate = new Set(getResult[0].map(o => ISOString(o?.EntryDate)));
+
+                const dataToSend = [...Array.from(UniqueDate)].map(o => ({
+                    EntryDate: o,
+                    Categories: getResult[1].map(category => ({
+                        WorkDetails: category.WorkDetails,
+                        StaffTypes: [
+                            ...[...getResult[3]].filter(stfTyp =>
+                                (stfTyp.WorkDetails === category.WorkDetails)
+                            ).map(types => ({
+                                StaffType: types.StaffType,
+                                StaffAttendance: {
+                                    ...getResult[0].find(re =>
+                                        (ISOString(re.EntryDate) === ISOString(o)) && (category?.WorkDetails === re.WorkDetails)
+                                    )
+                                }
+                            }))
+                        ]
+                    }))
+                }));
+
+                dataFound(res, dataToSend, null, {
+                    WorkDetails: getResult[1],
+                    StaffType: getResult[2]
+                });
+
             } else {
                 noData(res);
             }
@@ -187,13 +270,13 @@ const dataEntryAttendance = () => {
                         (@EntryDate, @LocationDetails, @WorkDetails, @StaffType, @StaffCount, @EntryBy)
                     `)
 
-                const result = await request;
+            const result = await request;
 
-                if (result.rowsAffected[0] > 0) {
-                    success(res, 'Attendance Saved');
-                } else {
-                    noData(res);
-                }
+            if (result.rowsAffected[0] > 0) {
+                success(res, 'Attendance Saved');
+            } else {
+                noData(res);
+            }
         } catch (e) {
             servError(e, res)
         }
@@ -255,7 +338,7 @@ const dataEntryAttendance = () => {
                     WHERE
                         Id = @Id
                     `)
-            
+
             const result = await request;
 
             if (result.rowsAffected[0] > 0) {
@@ -270,6 +353,7 @@ const dataEntryAttendance = () => {
 
     return {
         getAttendance,
+        getAttendanceNew,
         insertAttendance,
         updateAttendance,
     }
