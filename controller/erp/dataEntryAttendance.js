@@ -167,7 +167,7 @@ const dataEntryAttendance = () => {
                     SELECT
                         DISTINCT WorkDetails
                     FROM
-                        tbl_Data_Entry_Attendance;
+                        tbl_Data_Entry_Attendance
 
                     SELECT
                         DISTINCT StaffType
@@ -175,32 +175,47 @@ const dataEntryAttendance = () => {
                         tbl_Data_Entry_Attendance;
 
                     SELECT 
-                    	DISTINCT WorkDetails, 
-                    	StaffType 
+                    	DISTINCT w.WorkDetails, 
+                        ( 
+                            SELECT 
+                                DISTINCT StaffType 
+                            FROM 
+                                tbl_Data_Entry_Attendance
+                            WHERE
+                                WorkDetails = w.WorkDetails
+                                AND
+                                LocationDetails = @LocationDetails
+                            FOR JSON PATH
+                        ) AS StaffTypes
                     FROM 
-                    	tbl_Data_Entry_Attendance
+                    	tbl_Data_Entry_Attendance AS w
                     WHERE
-                        LocationDetails = @LocationDetails
+                        w.LocationDetails = @LocationDetails;
                     `)
 
             const getResult = (await getRequest).recordsets;
 
-            if (getResult[0].length > 0) {
 
+
+            if (getResult[0].length > 0) {
                 const UniqueDate = new Set(getResult[0].map(o => ISOString(o?.EntryDate)));
+                const parsedWorkType = getResult[3].map(o => ({
+                    WorkDetails: o.WorkDetails,
+                    StaffTypes: JSON.parse(o?.StaffTypes)
+                }))
 
                 const dataToSend = [...Array.from(UniqueDate)].map(o => ({
                     EntryDate: o,
-                    Categories: getResult[1].map(category => ({
+                    Categories: parsedWorkType.map(category => ({
                         WorkDetails: category.WorkDetails,
                         StaffTypes: [
-                            ...[...getResult[3]].filter(stfTyp =>
-                                (stfTyp.WorkDetails === category.WorkDetails)
-                            ).map(types => ({
+                            ...category.StaffTypes.map(types => ({
                                 StaffType: types.StaffType,
                                 StaffAttendance: {
                                     ...getResult[0].find(re =>
-                                        (ISOString(re.EntryDate) === ISOString(o)) && (category?.WorkDetails === re.WorkDetails)
+                                        (ISOString(re.EntryDate) === ISOString(o)) 
+                                        && (category?.WorkDetails === re.WorkDetails) 
+                                        && (re.StaffType === types.StaffType) 
                                     )
                                 }
                             }))
