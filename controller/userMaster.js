@@ -1,7 +1,7 @@
 const sql = require("mssql");
 const { storecall } = require("../config/store");
 var CryptoJS = require("crypto-js");
-const { invalidInput, servError, dataFound, noData, success, falied } = require("./res");
+const { invalidInput, servError, dataFound, noData, success, falied, checkIsNumber } = require("./res");
 
 
 function md5Hash(input) {
@@ -40,13 +40,18 @@ const userMaster = () => {
   const postUser = async (req, res) => {
     const { Name, UserName, UserTypeId, Password, BranchId, Company_Id } = req.body;
 
-    if (!Name || !UserName || !UserTypeId || !Password || !BranchId || !Company_Id) {
+    if (!Name || !UserName || !checkIsNumber(UserTypeId) || !Password || !checkIsNumber(BranchId) || !checkIsNumber(Company_Id)) {
       return res.status(400).json({ success: false, message: 'Name, UserName, UserTypeId, Password, BranchId and Company_Id is required', data: [] });
     }
 
     try {
-      const checkTable = await storecall(`SELECT UserId FROM tbl_Users WHERE UserName = '${UserName}'`)
-      if (Array.isArray(checkTable) && checkTable.length > 0) {
+      // const checkTable = await storecall(`SELECT UserId FROM tbl_Users WHERE UserName = '${UserName}'`)
+      const checkTable = (await new sql.Request()
+        .input('UserName', UserName)
+        .query('SELECT UserId FROM tbl_Users WHERE UserName = @UserName')
+      ).recordset
+
+      if (checkTable.length > 0) {
         return res.status(400).json({ success: false, message: 'Mobile Number is already exist', data: [] });
       }
 
@@ -131,6 +136,7 @@ const userMaster = () => {
       request.input('UserTypeId', 0);
       request.input('Password', 0);
       request.input('BranchId', 0);
+      request.input('Company_Id', 0);
 
       const result = await request.execute('UsersSP');
 
@@ -250,7 +256,7 @@ const userMaster = () => {
       } else {
         noData(res)
       }
-    } 
+    }
     catch (e) {
       servError(e, res);
     }
@@ -265,7 +271,7 @@ const userMaster = () => {
       } else {
         noData(res)
       }
-    } 
+    }
     catch (e) {
       servError(e, res);
     }
@@ -281,11 +287,11 @@ const userMaster = () => {
       } else {
         noData(res)
       }
-    } 
+    }
     catch (e) {
       servError(e, res);
     }
-    
+
   }
 
   const getAllUserCompanyBasedDropdown = async (req, res) => {
@@ -302,7 +308,7 @@ const userMaster = () => {
       } else {
         noData(res)
       }
-    } 
+    }
     catch (e) {
       servError(e, res);
     }
