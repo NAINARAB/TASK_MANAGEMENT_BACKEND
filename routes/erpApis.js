@@ -66,6 +66,7 @@ ERPRouter.get('/tally-test-api', SOA.externalAPI);
 
 // purchase Report
 ERPRouter.get('/PurchaseOrderReportCard', dbconnect, SOA.purchaseReport);
+ERPRouter.get('/combinedSalesReport', dbconnect, SOA.salesReport);
 
 
 
