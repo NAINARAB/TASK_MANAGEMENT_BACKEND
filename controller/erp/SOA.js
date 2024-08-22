@@ -338,10 +338,12 @@ const CustomerAPIs = () => {
             const DynamicDB = new sql.Request(req.db)
                 .input('Fromdate', Fromdate)
                 .input('To_date', Todate)
+                .execute('Avg_Live_Sales_Report')
     
-            const result = await DynamicDB.execute('Avg_Live_Sales_Report');
-            if (result.recordset.length > 0) {
-                dataFound(res, result.recordset)
+            const result = await DynamicDB;
+
+            if (result.recordsets[0].length > 0 && result.recordsets[1].length > 0) {
+                dataFound(res, result.recordsets[1], 'dataFound', { ledgerDetails: result.recordsets[0] })
             } else {
                 noData(res)
             }
@@ -362,7 +364,6 @@ const CustomerAPIs = () => {
     
             const result = await DynamicDB;
             if (result.recordsets[0].length > 0) {
-                console.log(result.recordsets[1])
                 dataFound(res, result.recordsets[0], 'dataFound', {LOSAbstract: result.recordsets[1]})
             } else {
                 noData(res)
