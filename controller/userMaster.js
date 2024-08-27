@@ -190,7 +190,7 @@ const userMaster = () => {
     try {
       let exeQuery = '';
       if (Boolean(AllUser)) {
-        exeQuery = `SELECT UserId, Name FROM tbl_Users WHERE UDel_Flag = 0 AND UserId != 0`;
+        exeQuery = `SELECT UserId, Name, Autheticate_Id FROM tbl_Users WHERE UDel_Flag = 0 AND UserId != 0`;
       } else {
         exeQuery = `SELECT UserId, Name FROM tbl_Users WHERE BranchId = '${BranchId}' AND UDel_Flag = 0 AND UserId != 0`;
       }
