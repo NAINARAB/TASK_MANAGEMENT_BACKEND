@@ -427,6 +427,33 @@ const CustomerAPIs = () => {
         }
     }
 
+    const externalAPISaleOrder = async (req, res) => {
+        try {
+            const { Fromdate, Todate } = req.query;
+
+            if (!Fromdate, !Todate) {
+                return invalidInput(res, 'Fromdate, Todate is required')
+            }
+    
+            const request = new sql.Request()
+                .input('Company_Id', 6)
+                .input('Vouche_Id', 0)
+                .input('Fromdate', Fromdate)
+                .input('Todate', Todate)
+                .execute('Online_Sales_Order_API')
+    
+            const result = await request;
+            if (result.recordset.length > 0) {
+                const sales = JSON.parse(result.recordset[0]?.SALES)
+                dataFound(res, sales)
+            } else {
+                noData(res)
+            }
+        } catch (e) {
+            servError(e, res)
+        }
+    }
+
 
 
     return {
@@ -441,7 +468,8 @@ const CustomerAPIs = () => {
         salesReport,
         porductBasedSalesResult,
         externalAPI,
-        externalAPIPurchase
+        externalAPIPurchase,
+        externalAPISaleOrder
     }
 }
 

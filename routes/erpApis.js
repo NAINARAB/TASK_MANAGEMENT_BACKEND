@@ -61,6 +61,7 @@ ERPRouter.get('/salesInfo', SOA.salesInfo);
 ERPRouter.get('/stockReport', dbconnect, SOA.stockReport);
 ERPRouter.get('/tally-test-api', SOA.externalAPI);
 ERPRouter.get('/tally-test-api-purchase', SOA.externalAPIPurchase);
+ERPRouter.get('/tally-test-api-saleOrder', SOA.externalAPISaleOrder);
 
 
 
